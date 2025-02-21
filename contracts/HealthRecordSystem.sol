@@ -55,4 +55,7 @@ contract HealthRecordSystem {
         }
         _;
     }
+    function own() public view returns (address) {
+        return defaultAddress;
+    }
 }
