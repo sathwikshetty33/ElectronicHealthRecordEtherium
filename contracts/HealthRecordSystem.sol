@@ -35,7 +35,6 @@ contract HealthRecordSystem {
     event DocumentAdded(uint256 indexed documentId, bytes32 hash, bool isHospital);
     event AccessGranted(uint256 indexed documentId, address indexed user);
     event AccessRevoked(uint256 indexed documentId, address indexed user);
-
     constructor() {
         defaultAddress = msg.sender;
         hospitalDocumentsCount = 0;
@@ -57,5 +56,9 @@ contract HealthRecordSystem {
     }
     function own() public view returns (address) {
         return defaultAddress;
+    }
+    function giveHospitalDocumentAccess(uint _id, address _user) public documentExists(_id, true) {
+        hospitalDocumentAuthorizations[_id][_user] = true;
+        emit AccessGranted(_id, _user);
     }
 }
