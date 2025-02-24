@@ -18,6 +18,7 @@ import time
 from .serialzers import *
 from web3 import Web3
 from rest_framework.authtoken.models import Token
+from rest_framework.authentication import TokenAuthentication
 
 address = "0x5fbdb2315678afecb367f032d93f642f64180aa3"  
 checksum_address = Web3.to_checksum_address(address) 
@@ -120,21 +121,35 @@ class PatientLogin(APIView):
             token,_ = Token.objects.get_or_create(user=us)
             return Response({
                 "token" : token.key
-            },status=status.HTTP_200_OK)
-@permission_classes([IsAuthenticated])        
+            },status=status.HTTP_200_OK)    
 class GetDoctors(APIView):
-    def post(self,request):
-        data = request.data
-        serializer = GetDoctorsSerializer(data=data)
-        if not serializer.is_valid():
-            return Response({"error":serializer.errors},status=status.HTTP_400_BAD_REQUEST)
-        hos = hospital.objects.filter(id=serializer.data['id']).first()
-        if hos is None:
-            return Response({"error":"Hospital not found"},status=status.HTTP_404_NOT_FOUND)
-        hospital_doctors = HospitalDoctors.objects.filter(hospital=hos)
+    def get(self, request):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return Response({"error": "Token missing or invalid"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Extract actual token value
+        token_key = auth_header.split(' ')[1]
+
+        try:
+            token = Token.objects.get(key=token_key)  # Find user from token
+            user = token.user  # Get the user associated with this token
+        except Token.DoesNotExist:
+            return Response({"error": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Check if the user is linked to a hospital
+        try:
+            user_hospital = hospital.objects.get(user=user)
+        except hospital.DoesNotExist:
+            return Response({"error": "Unauthorized: Only hospital users can access this."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Get all doctors in the hospital
+        hospital_doctors = HospitalDoctors.objects.filter(hospital=user_hospital)
         doctor_ids = hospital_doctors.values_list('doctor_id', flat=True)
         doctors = doctor.objects.filter(id__in=doctor_ids)
-        doctor_serializer = DoctorSerializer(doctors, many=True)    
+
+        # Serialize and return doctor data
+        doctor_serializer = DoctorSerializer(doctors, many=True)
         return Response({"doctors": doctor_serializer.data}, status=status.HTTP_200_OK)
 @api_view(['POST']) 
 @permission_classes([IsAuthenticated])
