@@ -1,5 +1,8 @@
 node_modules
 .env
+# .venv directory in backend
+ElectronicHealthRecordEtherium/backend/.venv/
+
 
 # Hardhat files
 /cache
