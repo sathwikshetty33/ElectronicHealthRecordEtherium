@@ -4,6 +4,8 @@ from rest_framework.views import APIView
 from web3 import Web3
 import json
 import os
+from .models import *
+from django.contrib.auth import authenticate
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -15,6 +17,7 @@ import hashlib
 import time
 from .serialzers import *
 from web3 import Web3
+from rest_framework.authtoken.models import Token
 
 address = "0x5fbdb2315678afecb367f032d93f642f64180aa3"  
 checksum_address = Web3.to_checksum_address(address) 
@@ -39,14 +42,101 @@ class ContractOwnerView(APIView):
             return Response({"owner": owner_address})
         except Exception as e:
             return Response({"error": str(e)}, status=500)
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def doctor_list(request):
-    doctors = doctor.objects.all()
-    serializer = DoctorSerializer(doctors, many=True)
-    return Response(serializer.data)
-
-@api_view(['POST'])
+class HospitalLogin(APIView):
+        def post(self, request):
+            data = request.data
+            serializer=HospitalLoginSerializer(data=data)
+            if not serializer.is_valid():
+                return Response({"some error":serializer.errors},status=status.HTTP_400_BAD_REQUEST)
+            username = serializer.data['username']
+            password = serializer.data['password']
+            add = serializer.data['address']
+            us = authenticate(username=username,password=password)
+            if us is None:
+                return  Response({
+                    "error" : "Invalid username and password"
+                },status=status.HTTP_401_UNAUTHORIZED)
+            d = hospital.objects.filter(user=us).first()
+            if d is None:
+                return  Response({
+                    "error" : "You are not Hospital register as one"
+                },status=status.HTTP_401_UNAUTHORIZED)
+            d = hospital.objects.filter(user=us,address=add).first()
+            if d is None:
+                return  Response({
+                    "error" : "Incorrect metamask address"
+                },status=status.HTTP_401_UNAUTHORIZED)
+            token,_ = Token.objects.get_or_create(user=us)
+            return Response({
+                "token" : token.key
+            },status=status.HTTP_200_OK)
+class DoctorLogin(APIView):
+        def post(self, request):
+            data = request.data
+            serializer=HospitalLoginSerializer(data=data)
+            if not serializer.is_valid():
+                return Response({"some error":serializer.errors},status=status.HTTP_400_BAD_REQUEST)
+            username = serializer.data['username']
+            password = serializer.data['password']
+            add = serializer.data['address']
+            us = authenticate(username=username,password=password)
+            if us is None:
+                return  Response({
+                    "error" : "Invalid username and password"
+                },status=status.HTTP_401_UNAUTHORIZED)
+            d = doctor.objects.filter(user=us).first()
+            if d is None:
+                return  Response({
+                    "error" : "You are not Doctor register as one"
+                },status=status.HTTP_401_UNAUTHORIZED)
+            d = doctor.objects.filter(user=us,address=add).first()
+            if d is None:
+                return  Response({
+                    "error" : "Incorrect metamask address"
+                },status=status.HTTP_401_UNAUTHORIZED)
+            token,_ = Token.objects.get_or_create(user=us)
+            return Response({
+                "token" : token.key
+            },status=status.HTTP_200_OK)
+class PatientLogin(APIView):
+        def post(self, request):
+            data = request.data
+            serializer=HospitalLoginSerializer(data=data)
+            if not serializer.is_valid():
+                return Response({"some error":serializer.errors},status=status.HTTP_400_BAD_REQUEST)
+            username = serializer.data['username']
+            password = serializer.data['password']
+            add = serializer.data['address']
+            us = authenticate(username=username,password=password)
+            if us is None:
+                return  Response({
+                    "error" : "Invalid username and password"
+                },status=status.HTTP_401_UNAUTHORIZED)
+            d = patient.objects.filter(user=us).first()
+            if d is None:
+                return  Response({
+                    "error" : "You are not a user register as one"
+                },status=status.HTTP_401_UNAUTHORIZED)
+            token,_ = Token.objects.get_or_create(user=us)
+            return Response({
+                "token" : token.key
+            },status=status.HTTP_200_OK)
+@permission_classes([IsAuthenticated])        
+class GetDoctors(APIView):
+    def post(self,request):
+        data = request.data
+        serializer = GetDoctorsSerializer(data=data)
+        if not serializer.is_valid():
+            return Response({"error":serializer.errors},status=status.HTTP_400_BAD_REQUEST)
+        hos = hospital.objects.filter(id=serializer.data['id']).first()
+        if hos is None:
+            return Response({"error":"Hospital not found"},status=status.HTTP_404_NOT_FOUND)
+        hospital_doctors = HospitalDoctors.objects.filter(hospital=hos)
+        doctor_ids = hospital_doctors.values_list('doctor_id', flat=True)
+        doctors = doctor.objects.filter(id__in=doctor_ids)
+        doctor_serializer = DoctorSerializer(doctors, many=True)    
+        return Response({"doctors": doctor_serializer.data}, status=status.HTTP_200_OK)
+@api_view(['POST']) 
 @permission_classes([IsAuthenticated])
 def doctor_create(request):
     serializer = DoctorSerializer(data=request.data)

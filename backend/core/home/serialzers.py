@@ -4,7 +4,12 @@ class DoctorSerializer(serializers.ModelSerializer):
     class Meta:
         model = doctor
         fields = '__all__'
-
+class HospitalLoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+    address = serializers.CharField()
+class GetDoctorsSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
 class HospitalSerializer(serializers.ModelSerializer):
     class Meta:
         model = hospital

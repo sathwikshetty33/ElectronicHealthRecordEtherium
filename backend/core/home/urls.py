@@ -1,9 +1,12 @@
 from django.urls import path
-from .views import ContractOwnerView
+from . import views
 from .views import *
 urlpatterns = [
+    path('hospital-login/',HospitalLogin.as_view(),name='hoslog'),
+    path('patient-login/',PatientLogin.as_view(),name='patlog'),
+    path('doctor-login/',DoctorLogin.as_view(),name='doclog'),
 
-    path('doctors/', doctor_list, name='doctor-list'),
+    path('doctors/', GetDoctors.as_view(), name='doctor-list'),
     path('doctors/create/', doctor_create, name='doctor-create'),
     path('doctors/<int:pk>/', doctor_detail, name='doctor-detail'),
     
