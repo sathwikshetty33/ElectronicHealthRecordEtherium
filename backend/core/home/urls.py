@@ -2,7 +2,7 @@ from django.urls import path
 from .views import ContractOwnerView
 from .views import *
 urlpatterns = [
-    # Doctor URLs
+
     path('doctors/', doctor_list, name='doctor-list'),
     path('doctors/create/', doctor_create, name='doctor-create'),
     path('doctors/<int:pk>/', doctor_detail, name='doctor-detail'),
