@@ -14,6 +14,9 @@ class HospitalSerializer(serializers.ModelSerializer):
     class Meta:
         model = hospital
         fields = '__all__'
+class PatientLoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
 
 class PatientSerializer(serializers.ModelSerializer):
     class Meta:
