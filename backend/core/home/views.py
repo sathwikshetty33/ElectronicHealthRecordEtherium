@@ -25,7 +25,7 @@ checksum_address = Web3.to_checksum_address(address)
 
 print(checksum_address)  
 
-with open(r'/home/sathwik/EHR/backend/core/home/abi.json', "r") as abi_file:
+with open(r'/Volumes/T7/untitled folder 12/ElectronicHealthRecordEtherium/backend/core/home/abi.json', "r") as abi_file:
     contract_abi = json.load(abi_file)
 
 
@@ -69,7 +69,8 @@ class HospitalLogin(APIView):
                 },status=status.HTTP_401_UNAUTHORIZED)
             token,_ = Token.objects.get_or_create(user=us)
             return Response({
-                "token" : token.key
+                "token" : token.key,
+                "hospId" : d.id,
             },status=status.HTTP_200_OK)
 class DoctorLogin(APIView):
         def post(self, request):
@@ -97,7 +98,8 @@ class DoctorLogin(APIView):
                 },status=status.HTTP_401_UNAUTHORIZED)
             token,_ = Token.objects.get_or_create(user=us)
             return Response({
-                "token" : token.key
+                "token" : token.key,
+                "docId" : d.id
             },status=status.HTTP_200_OK)
 class PatientLogin(APIView):
         def post(self, request):
@@ -119,7 +121,8 @@ class PatientLogin(APIView):
                 },status=status.HTTP_401_UNAUTHORIZED)
             token,_ = Token.objects.get_or_create(user=us)
             return Response({
-                "token" : token.key
+                "token" : token.key,
+                "patId" : d.id,
             },status=status.HTTP_200_OK)    
 class GetDoctors(APIView):
     def get(self, request):

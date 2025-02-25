@@ -15,6 +15,5 @@ ElectronicHealthRecordEtherium/backend/.venv/
 # solidity-coverage files
 /coverage
 /coverage.json
-/backend/.venv
 # Hardhat Ignition default folder for deployments against a local node
 ignition/deployments/chain-31337
