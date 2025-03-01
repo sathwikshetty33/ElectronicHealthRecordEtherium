@@ -192,7 +192,27 @@ class PatientDoc(APIView):
             
         }
         return Response(context, status=status.HTTP_200_OK)
-
+class getPatientDocStatus(APIView):
+    def get(self, request, id):
+        try:
+            patd = patientDocument.objects.get(id=id)
+        except patientDocument.DoesNotExist:
+            return Response({"error": "Patient document does not exist."}, status=status.HTTP_404_NOT_FOUND)
+        if patd.isPrivate == False:
+            return Response(status=status.HTTP_200_OK)
+        try:
+            tok = request.COOKIES.get('authToken')
+        except KeyError:
+            return Response({"error": "Authentication token not found"}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            token = Token.objects.get(key=tok)
+        except Token.DoesNotExist:
+            return Response({"error": "Invalid authentication token"}, status=status.HTTP_403_FORBIDDEN)
+        if token.user!= patd.patient.user:
+            return Response({"error": "Unauthorized access"}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response(status=status.HTTP_200_OK)
+        
+        
 @api_view(['POST']) 
 @permission_classes([IsAuthenticated])
 def doctor_create(request):

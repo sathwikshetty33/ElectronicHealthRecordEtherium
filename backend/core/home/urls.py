@@ -16,4 +16,5 @@ urlpatterns = [
     path('patient-documents/create/', patient_document_create, name='patient-document-create'),
     path('patient-documents/<int:doc_id>/visibility/', change_document_visibility, name='change-document-visibility'),
     path('patient-documents/<int:id>/',PatientDoc.as_view(),name='patient-documents'),
+    path('patient-document-access/<int:id>/',getPatientDocStatus.as_view(),name='patient-doc-status'),
 ]

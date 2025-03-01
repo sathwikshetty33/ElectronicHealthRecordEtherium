@@ -31,8 +31,8 @@ class HospitalDocumentSerializer(serializers.ModelSerializer):
 class PatientPersonalDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = patientDocument
-        fields = 'name','added'
+        fields = 'name','added','id'
 class PatientHospitalDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = hospitalDocument
-        fields = 'name','added'
+        fields = 'name','added','id'

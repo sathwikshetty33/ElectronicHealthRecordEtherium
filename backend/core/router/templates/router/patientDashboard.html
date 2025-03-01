@@ -65,6 +65,32 @@
             color: gray;
             font-style: italic;
         }
+        .doc-btn {
+            margin-top: 8px;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .view-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .request-btn {
+            background-color: #2196F3;
+            color: white;
+        }
+        .loading {
+            font-size: 12px;
+            color: #666;
+            margin-top: 8px;
+        }
+        .error {
+            font-size: 12px;
+            color: #f44336;
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body>
@@ -104,12 +130,12 @@
         .then(response => response.json())
         .then(data => {
             if (data.patient) {
-                document.getElementById("patient-name").innerText = data.patient?.name;
-                document.getElementById("patient-age").innerText = data.patient?.age;
-                document.getElementById("patient-blood-group").innerText = data.patient?.bloodGroup;
-                document.getElementById("patient-address").innerText = data.patient.address;
-                document.getElementById("patient-contact").innerText = data.patient.contact;
-                document.getElementById("patient-emergency").innerText = data.patient.emergencyContact;
+                document.getElementById("patient-name").innerText = data.patient?.name || '';
+                document.getElementById("patient-age").innerText = data.patient?.age || '';
+                document.getElementById("patient-blood-group").innerText = data.patient?.bloodGroup || '';
+                document.getElementById("patient-address").innerText = data.patient?.address || '';
+                document.getElementById("patient-contact").innerText = data.patient?.contact || '';
+                document.getElementById("patient-emergency").innerText = data.patient?.emergencyContact || '';
             }
         })
         .catch(error => console.error("Error fetching patient details:", error));
@@ -121,18 +147,39 @@
             const personalSlider = document.getElementById("personal-slider");
             const hospitalSlider = document.getElementById("hospital-slider");
 
-            if (data.patient.length > 0) {
+            if (data.patient && data.patient.length > 0) {
                 data.patient.forEach(doc => {
+                    // Ensure the document has an id property
+                    const docId = doc.id;
+                    if (!docId) {
+                        console.error("Document missing ID:", doc);
+                    }
+                    
                     const div = document.createElement("div");
                     div.classList.add("document");
-                    div.innerHTML = `<strong>${doc.name}</strong><br>${new Date(doc.added).toLocaleDateString()}`;
+                    div.innerHTML = `
+                        <strong>${doc.name}</strong><br>
+                        ${new Date(doc.added).toLocaleDateString()}<br>
+                        <div id="access-control-${docId}" class="access-control">
+                            <div class="loading">Checking access...</div>
+                        </div>
+                    `;
                     personalSlider.appendChild(div);
+                    
+                    // Check document access permission if we have an ID
+                    if (docId) {
+                        checkDocumentAccess(docId);
+                    } else {
+                        // Update access control div if no ID
+                        document.getElementById(`access-control-${docId}`).innerHTML = 
+                            '<div class="error">Invalid document ID</div>';
+                    }
                 });
             } else {
                 personalSlider.innerHTML = "<p class='empty-message'>No personal documents found.</p>";
             }
 
-            if (data.hospital.length > 0) {
+            if (data.hospital && data.hospital.length > 0) {
                 data.hospital.forEach(doc => {
                     const div = document.createElement("div");
                     div.classList.add("document");
@@ -142,8 +189,75 @@
             } else {
                 hospitalSlider.innerHTML = "<p class='empty-message'>No hospital documents found.</p>";
             }
+            
+            // Log the actual data structure received for debugging
+            console.log("Document data received:", data);
         })
         .catch(error => console.error("Error fetching documents:", error));
+
+    // Check document access permissions
+    function checkDocumentAccess(docId) {
+        console.log(`Checking access for document ID: ${docId}`);
+        
+        fetch(`/patient-document-access/${docId}`)
+            .then(response => {
+                const accessControlDiv = document.getElementById(`access-control-${docId}`);
+                
+                if (response.status === 200) {
+                    // Access granted - show view button
+                    accessControlDiv.innerHTML = `
+                        <button class="doc-btn view-btn" onclick="viewDocument(${docId})">
+                            View Document
+                        </button>
+                    `;
+                } else if (response.status === 401) {
+                    // Not authorized but can request - show request button
+                    accessControlDiv.innerHTML = `
+                        <button class="doc-btn request-btn" onclick="requestAccess(${docId})">
+                            Request Access
+                        </button>
+                    `;
+                } else if (response.status === 403) {
+                    // Forbidden - show nothing
+                    accessControlDiv.innerHTML = '';
+                } else {
+                    // Other error
+                    accessControlDiv.innerHTML = '<div class="error">Unable to check access</div>';
+                }
+            })
+            .catch(error => {
+                console.error(`Error checking document access for ID ${docId}:`, error);
+                const accessControlDiv = document.getElementById(`access-control-${docId}`);
+                accessControlDiv.innerHTML = '<div class="error">Error checking access</div>';
+            });
+    }
+
+    // View document function
+    function viewDocument(docId) {
+        console.log(`Viewing document ${docId}`);
+        // Implement document viewing functionality
+        window.location.href = `/view-document/${docId}`;
+    }
+
+    // Request access function
+    function requestAccess(docId) {
+        console.log(`Requesting access to document ${docId}`);
+        // Implement access request functionality
+        fetch(`/request-document-access/${docId}`, {
+            method: 'POST',
+        })
+        .then(response => {
+            if (response.ok) {
+                alert('Access request submitted successfully');
+            } else {
+                alert('Failed to submit access request');
+            }
+        })
+        .catch(error => {
+            console.error(`Error requesting access for document ${docId}:`, error);
+            alert('Error requesting access');
+        });
+    }
 
     // Slider Scroll Functions
     function scrollLeft(sliderId) {
