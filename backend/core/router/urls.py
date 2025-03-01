@@ -5,4 +5,5 @@ urlpatterns = [
     path('',views.loginView,name='login'),
     path('doctor-dashboard/<int:id>',views.doctorDashboard,name='doctor-dashboard'),
     path('hospital-dashboard/<int:id>',views.hospitalDashboard,name='hospital-dashboard'),
+    path('patient-dashboard/<int:id>',views.patientDashboard,name='patient-dashboard'),
 ]

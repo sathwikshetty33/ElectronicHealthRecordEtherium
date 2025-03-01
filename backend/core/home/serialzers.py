@@ -28,7 +28,11 @@ class HospitalDocumentSerializer(serializers.ModelSerializer):
         model = hospitalDocument
         fields = '__all__'
 
-class PatientDocumentSerializer(serializers.ModelSerializer):
+class PatientPersonalDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = patientDocument
-        fields = '__all__'
+        fields = 'name','added'
+class PatientHospitalDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = hospitalDocument
+        fields = 'name','added'

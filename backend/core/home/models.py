@@ -40,12 +40,14 @@ class hospitalLedger(models.Model):
     def __str__(self):
         return f"{self.hospital.name}-{self.patient.name}-{self.id}"
 class hospitalDocument(models.Model):
+    name = models.CharField(max_length=100,blank=True,null=True)
     added = models.DateTimeField(auto_now_add=True,blank=True,null=True)
     hospitalLedger = models.ForeignKey(hospitalLedger, on_delete=models.CASCADE)
     isPrivate = models.BooleanField(default=True)
     def __str__(self):
         return f"{self.hospitalLedger.hospital.name}-{self.hospitalLedger.patient.name}-{self.id}"
 class patientDocument(models.Model):
+    name = models.CharField(max_length=100, blank=True, null=True)
     patient = models.ForeignKey(patient, on_delete=models.CASCADE)
     isPrivate = models.BooleanField(default=True)
     added = models.DateTimeField(auto_now_add=True,blank=True,null=True)

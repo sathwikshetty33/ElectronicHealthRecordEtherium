@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        .info {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .slider-container {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .slider {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            padding: 10px;
+            background: #e8e8e8;
+            border-radius: 5px;
+            white-space: nowrap;
+        }
+        .document {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            min-width: 150px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        .nav-btn {
+            cursor: pointer;
+            padding: 10px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        .empty-message {
+            text-align: center;
+            color: gray;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Patient Dashboard</h2>
+    
+    <div class="info">
+        <strong>Name:</strong> <span id="patient-name"></span><br>
+        <strong>Age:</strong> <span id="patient-age"></span><br>
+        <strong>Blood Group:</strong> <span id="patient-blood-group"></span><br>
+        <strong>Address:</strong> <span id="patient-address"></span><br>
+        <strong>Contact:</strong> <span id="patient-contact"></span><br>
+        <strong>Emergency Contact:</strong> <span id="patient-emergency"></span>
+    </div>
+
+    <h3>Personal Documents</h3>
+    <div class="slider-container">
+        <button class="nav-btn" onclick="scrollLeft('personal-slider')">⬅</button>
+        <div class="slider" id="personal-slider"></div>
+        <button class="nav-btn" onclick="scrollRight('personal-slider')">➡</button>
+    </div>
+
+    <h3>Hospital Documents</h3>
+    <div class="slider-container">
+        <button class="nav-btn" onclick="scrollLeft('hospital-slider')">⬅</button>
+        <div class="slider" id="hospital-slider"></div>
+        <button class="nav-btn" onclick="scrollRight('hospital-slider')">➡</button>
+    </div>
+</div>
+
+<script>
+    const patientId = 1; // Change this dynamically as needed
+
+    // Fetch patient details
+    fetch(`/patient-dashboard/{{id}}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.patient) {
+                document.getElementById("patient-name").innerText = data.patient?.name;
+                document.getElementById("patient-age").innerText = data.patient?.age;
+                document.getElementById("patient-blood-group").innerText = data.patient?.bloodGroup;
+                document.getElementById("patient-address").innerText = data.patient.address;
+                document.getElementById("patient-contact").innerText = data.patient.contact;
+                document.getElementById("patient-emergency").innerText = data.patient.emergencyContact;
+            }
+        })
+        .catch(error => console.error("Error fetching patient details:", error));
+
+    // Fetch patient documents
+    fetch(`/patient-documents/{{id}}`)
+        .then(response => response.json())
+        .then(data => {
+            const personalSlider = document.getElementById("personal-slider");
+            const hospitalSlider = document.getElementById("hospital-slider");
+
+            if (data.patient.length > 0) {
+                data.patient.forEach(doc => {
+                    const div = document.createElement("div");
+                    div.classList.add("document");
+                    div.innerHTML = `<strong>${doc.name}</strong><br>${new Date(doc.added).toLocaleDateString()}`;
+                    personalSlider.appendChild(div);
+                });
+            } else {
+                personalSlider.innerHTML = "<p class='empty-message'>No personal documents found.</p>";
+            }
+
+            if (data.hospital.length > 0) {
+                data.hospital.forEach(doc => {
+                    const div = document.createElement("div");
+                    div.classList.add("document");
+                    div.innerHTML = `<strong>${doc.name}</strong><br>${new Date(doc.added).toLocaleDateString()}`;
+                    hospitalSlider.appendChild(div);
+                });
+            } else {
+                hospitalSlider.innerHTML = "<p class='empty-message'>No hospital documents found.</p>";
+            }
+        })
+        .catch(error => console.error("Error fetching documents:", error));
+
+    // Slider Scroll Functions
+    function scrollLeft(sliderId) {
+        document.getElementById(sliderId).scrollBy({ left: -200, behavior: "smooth" });
+    }
+    function scrollRight(sliderId) {
+        document.getElementById(sliderId).scrollBy({ left: 200, behavior: "smooth" });
+    }
+</script>
+
+</body>
+</html>

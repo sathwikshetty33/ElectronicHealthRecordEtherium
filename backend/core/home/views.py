@@ -163,7 +163,7 @@ class PatientDashboard(APIView):
         except patient.DoesNotExist:
             return Response({"error": "patient does nott exist."}, status=status.HTTP_404_NOT_FOUND)
         pat_serializer = PatientSerializer(pat)
-        return Response({"hospital": pat_serializer.data}, status=status.HTTP_200_OK)
+        return Response({"patient": pat_serializer.data}, status=status.HTTP_200_OK)
 class DoctorDashboard(APIView):
     def get(self, request,id):
         try:
@@ -172,6 +172,27 @@ class DoctorDashboard(APIView):
             return Response({"error": "Doctor does not exist."}, status=status.HTTP_404_NOT_FOUND)
         doc_serializer = DoctorSerializer(doc)
         return Response({"doctor": doc_serializer.data}, status=status.HTTP_200_OK)
+class PatientDoc(APIView):
+    def get(self,request,id):
+        try: 
+            pat = patient.objects.get(id=id)
+        except patient.DoesNotExist:
+            return Response({"error": "Patient does not exist."}, status=status.HTTP_404_NOT_FOUND)
+        patd = patientDocument.objects.filter(patient=pat)
+        patd_serializer = PatientPersonalDocumentSerializer(patd,many=True)
+        try: 
+            hospd = hospitalLedger.objects.get(patient=pat)
+        except hospitalLedger.DoesNotExist:
+            return Response({"error": "No hospital document found for this patient."}, status=status.HTTP_404_NOT_FOUND)
+        hosp_d = hospitalDocument.objects.filter(hospitalLedger = hospd)
+        hosp_d_serializer = PatientHospitalDocumentSerializer(hosp_d, many=True)
+        context = {
+            "patient": patd_serializer.data,
+            "hospital": hosp_d_serializer.data,
+            
+        }
+        return Response(context, status=status.HTTP_200_OK)
+
 @api_view(['POST']) 
 @permission_classes([IsAuthenticated])
 def doctor_create(request):

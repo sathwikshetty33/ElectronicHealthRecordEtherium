@@ -15,4 +15,5 @@ urlpatterns = [
     path('hospital-documents/<int:doc_id>/grant-access/', grant_hospital_access, name='grant-hospital-access'),
     path('patient-documents/create/', patient_document_create, name='patient-document-create'),
     path('patient-documents/<int:doc_id>/visibility/', change_document_visibility, name='change-document-visibility'),
+    path('patient-documents/<int:id>/',PatientDoc.as_view(),name='patient-documents'),
 ]
