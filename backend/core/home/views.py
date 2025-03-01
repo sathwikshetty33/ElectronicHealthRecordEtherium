@@ -17,8 +17,11 @@ import hashlib
 import time
 from .serialzers import *
 from web3 import Web3
+from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.authentication import TokenAuthentication
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 address = "0x5fbdb2315678afecb367f032d93f642f64180aa3"  
 checksum_address = Web3.to_checksum_address(address) 
@@ -44,6 +47,8 @@ class ContractOwnerView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 class HospitalLogin(APIView):
+        authentication_classes = [] # No authentication for login endpoint
+        permission_classes = [AllowAny]
         def post(self, request):
             data = request.data
             serializer=HospitalLoginSerializer(data=data)
@@ -72,8 +77,13 @@ class HospitalLogin(APIView):
                 "token" : token.key,
                 "hospId" : d.id,
             },status=status.HTTP_200_OK)
+        
+@method_decorator(csrf_exempt, name='dispatch')
 class DoctorLogin(APIView):
+        authentication_classes = [] # No authentication for login endpoint
+        permission_classes = [AllowAny]
         def post(self, request):
+            
             data = request.data
             serializer=HospitalLoginSerializer(data=data)
             if not serializer.is_valid():
@@ -102,6 +112,8 @@ class DoctorLogin(APIView):
                 "docId" : d.id
             },status=status.HTTP_200_OK)
 class PatientLogin(APIView):
+        authentication_classes = [] # No authentication for login endpoint
+        permission_classes = [AllowAny]
         def post(self, request):
             data = request.data
             serializer=PatientLoginSerializer(data=data)
@@ -142,6 +154,7 @@ class HospitalDashboard(APIView):
         except hospital.DoesNotExist:
             return Response({"error": "Hospital does not exsist"}, status=status.HTTP_404_NOT_FOUND)
         hosp_serializer = HospitalSerializer(user_hospital)
+        print(hosp_serializer.data)
         return Response({"hospital": hosp_serializer.data}, status=status.HTTP_200_OK)
 class PatientDashboard(APIView):
     def get(self, request,id):
@@ -158,7 +171,7 @@ class DoctorDashboard(APIView):
         except doctor.DoesNotExist:
             return Response({"error": "Doctor does not exist."}, status=status.HTTP_404_NOT_FOUND)
         doc_serializer = DoctorSerializer(doc)
-        return Response({"hospital": doc_serializer.data}, status=status.HTTP_200_OK)
+        return Response({"doctor": doc_serializer.data}, status=status.HTTP_200_OK)
 @api_view(['POST']) 
 @permission_classes([IsAuthenticated])
 def doctor_create(request):
