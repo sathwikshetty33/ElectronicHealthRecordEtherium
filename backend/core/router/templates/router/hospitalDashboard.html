@@ -22,6 +22,12 @@
             padding: 20px;
             border-radius: 8px 8px 0 0;
             margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            margin: 0;
         }
         .card {
             background-color: white;
@@ -75,12 +81,70 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             min-width: 250px;
         }
+        .doctor-link {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .doctor-link:hover {
+            background-color: #2980b9;
+        }
+        .auth-section {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .auth-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .btn {
+            padding: 10px 15px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        .btn-success {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+        .login-btn {
+            background-color: #3498db;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>Hospital Dashboard</h1>
+            <div id="header-auth" style="display: none;">
+                <button class="login-btn" onclick="redirectToLogin()">Login</button>
+            </div>
         </div>
         
         <div id="error" class="error">
@@ -89,6 +153,13 @@
         
         <div id="loading" class="loading">
             Loading hospital information...
+        </div>
+        
+        <div id="auth-section" class="auth-section" style="display: none;">
+            <div class="auth-buttons">
+                <a href="/route/add-patient/" id="add-patient-btn" class="btn btn-primary">Add Patient</a>
+                <a href="#" id="see-patients-btn" class="btn btn-success">See All Patients</a>
+            </div>
         </div>
         
         <div id="hospital-info" style="display: none;">
@@ -134,9 +205,43 @@
             }
             
             const authToken = getCookie('authToken');
-            const hospitalId = getCookie('hospitalId');
+            const hospitalId = {{id}} || window.location.pathname.split('/').pop();
             
-            fetch(`/hospital-dashboard/{{id}}`, {
+            // Check hospital auth status
+            function checkHospitalAuth() {
+                fetch(`/check-hospital/${hospitalId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.status === 200) {
+                        // Authorized - show auth section with buttons
+                        document.getElementById('auth-section').style.display = 'block';
+                        
+                        // Set up button links
+                        document.getElementById('add-patient-btn').href = `/route/add-patient/`;
+                        document.getElementById('see-patients-btn').href = `/route/hospital-patients/`;
+                    } else if (response.status === 403) {
+                        // Not logged in - show login button in header
+                        document.getElementById('header-auth').style.display = 'block';
+                    } else if (response.status === 401) {
+                        // Unauthorized - don't show auth section
+                        document.getElementById('auth-section').style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking hospital authorization:', error);
+                });
+            }
+            
+            function redirectToLogin() {
+                window.location.href = "/route/";
+            }
+            
+            // Load hospital information
+            fetch(`/hospital-dashboard/${hospitalId}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${authToken}`,
@@ -156,7 +261,7 @@
                 document.getElementById('hospital-location').textContent = data.hospital?.location || 'N/A';
                 document.getElementById('hospital-contact').textContent = data.hospital?.contact || 'N/A';
                 
-                return fetch(`/doctors/{{id}}`, {
+                return fetch(`/doctors/${hospitalId}`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${authToken}`,
@@ -181,18 +286,25 @@
                         <strong>Name:</strong> ${doc.name} <br>
                         <strong>Age:</strong> ${doc.age} <br>
                         <strong>License:</strong> ${doc.license} <br>
-                        <strong>Contact:</strong> ${doc.contact}
+                        <strong>Contact:</strong> ${doc.contact} <br>
+                        <a href="/route/doctor-dashboard/${doc.id}" class="doctor-link">View Doctor</a>
                     `;
                     doctorsSlider.appendChild(docCard);
                 });
                 
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('hospital-info').style.display = 'block';
+                
+                // Check auth status after loading content
+                checkHospitalAuth();
             })
             .catch(error => {
                 console.error('Error fetching hospital information:', error);
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('error').style.display = 'block';
+                
+                // Still check auth even if there's an error
+                checkHospitalAuth();
             });
         });
     </script>

@@ -91,6 +91,26 @@
             color: #f44336;
             margin-top: 8px;
         }
+        .auth-section {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .login-btn, .add-doc-btn {
+            padding: 10px 15px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .login-btn {
+            background-color: #2196F3;
+            color: white;
+        }
+        .add-doc-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -105,6 +125,10 @@
         <strong>Address:</strong> <span id="patient-address"></span><br>
         <strong>Contact:</strong> <span id="patient-contact"></span><br>
         <strong>Emergency Contact:</strong> <span id="patient-emergency"></span>
+    </div>
+
+    <div id="auth-section" class="auth-section">
+        <div class="loading">Checking authorization...</div>
     </div>
 
     <h3>Personal Documents</h3>
@@ -123,10 +147,56 @@
 </div>
 
 <script>
-    const patientId = 1; // Change this dynamically as needed
+    const patientId = {{id}}; // Change this dynamically as needed
+
+    // Check patient authorization
+    function checkPatientAuth() {
+        const authSection = document.getElementById("auth-section");
+        authSection.innerHTML = '<div class="loading">Checking authorization...</div>';
+        
+        fetch(`/check-patient/${patientId}`)
+            .then(response => {
+                if (response.status === 200) {
+                    // Authorized - show add document button
+                    authSection.innerHTML = `
+                        <button class="add-doc-btn" onclick="addDocument()">
+                            Add Document
+                        </button>
+                    `;
+                } else if (response.status === 403) {
+                    // Not logged in - show login button
+                    authSection.innerHTML = `
+                        <div class="error">You need to log in to access this patient's dashboard</div>
+                        <button class="login-btn" onclick="redirectToLogin()">
+                            Login
+                        </button>
+                    `;
+                } else if (response.status === 401) {
+                    // Unauthorized - don't show anything
+                    authSection.innerHTML = '';
+                } else {
+                    // Other error
+                    authSection.innerHTML = '<div class="error">Error checking authorization</div>';
+                }
+            })
+            .catch(error => {
+                console.error("Error checking patient authorization:", error);
+                authSection.innerHTML = '<div class="error">Error checking authorization</div>';
+            });
+    }
+
+    function redirectToLogin() {
+        window.location.href = "/route/";
+    }
+
+    function addDocument() {
+        console.log("Adding new document");
+        // Implement document adding functionality
+        window.location.href = `/add-document/${patientId}`;
+    }
 
     // Fetch patient details
-    fetch(`/patient-dashboard/{{id}}`)
+    fetch(`/patient-dashboard/${patientId}`)
         .then(response => response.json())
         .then(data => {
             if (data.patient) {
@@ -141,7 +211,7 @@
         .catch(error => console.error("Error fetching patient details:", error));
 
     // Fetch patient documents
-    fetch(`/patient-documents/{{id}}`)
+    fetch(`/patient-documents/${patientId}`)
         .then(response => response.json())
         .then(data => {
             const personalSlider = document.getElementById("personal-slider");
@@ -266,6 +336,11 @@
     function scrollRight(sliderId) {
         document.getElementById(sliderId).scrollBy({ left: 200, behavior: "smooth" });
     }
+
+    // Initialize the page by checking patient auth
+    window.onload = function() {
+        checkPatientAuth();
+    };
 </script>
 
 </body>

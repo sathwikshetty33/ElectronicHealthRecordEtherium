@@ -17,4 +17,12 @@ urlpatterns = [
     path('patient-documents/<int:doc_id>/visibility/', change_document_visibility, name='change-document-visibility'),
     path('patient-documents/<int:id>/',PatientDoc.as_view(),name='patient-documents'),
     path('patient-document-access/<int:id>/',getPatientDocStatus.as_view(),name='patient-doc-status'),
+    path('check-patient/<int:id>',checkPatient.as_view(),name='check-patient'),
+    path('check-hospital/<int:id>',checkHospital.as_view(),name='check-hospital'),
+    path('check-hospital-role/', HospitalRoleCheckAPIView.as_view(), name='check-hospital-role'),
+    path('hospital-ledger/', HospitalLedgerAPIView.as_view(), name='hospital-ledger'),
+    path('patients/search/', PatientSearchAPIView.as_view(), name='patient-search'),
+    path('doctors/search/', DoctorSearchAPIView.as_view(), name='doctor-search'),
+    path('hospital-patients/', hospitalPatients.as_view(), name='hospital-patients'),
+
 ]

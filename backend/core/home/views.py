@@ -13,6 +13,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from web3 import Web3
 from django.conf import settings
+from django.db.models import Q
 import hashlib
 import time
 from .serialzers import *
@@ -211,8 +212,154 @@ class getPatientDocStatus(APIView):
         if token.user!= patd.patient.user:
             return Response({"error": "Unauthorized access"}, status=status.HTTP_401_UNAUTHORIZED)
         return Response(status=status.HTTP_200_OK)
+class checkPatient(APIView):
+    def get(self, request, id):
+        try:
+            tok = request.COOKIES.get('authToken')
+        except KeyError:
+            return Response({"error": "Authentication token not found"}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            token = Token.objects.get(key=tok)
+        except Token.DoesNotExist:
+            return Response({"error": "Invalid authentication token"}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            patd = patient.objects.get(id=id)
+        except patient.DoesNotExist:
+            return Response({"error": "Patient does not exist."}, status=status.HTTP_404_NOT_FOUND)
+        if token.user!= patd.user:
+            return Response({"error": "Unauthorized access"}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response(status=status.HTTP_200_OK)
+class checkHospital(APIView):
+    def get(self, request, id):
+        try:
+            tok = request.COOKIES.get('authToken')
+        except KeyError:
+            return Response({"error": "Authentication token not found"}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            token = Token.objects.get(key=tok)
+        except Token.DoesNotExist:
+            return Response({"error": "Invalid authentication token"}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            patd = hospital.objects.get(id=id)
+        except patient.DoesNotExist:
+            return Response({"error": "Patient does not exist."}, status=status.HTTP_404_NOT_FOUND)
+        if token.user!= patd.user:
+            return Response({"error": "Unauthorized access"}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response(status=status.HTTP_200_OK)
+
+class HospitalRoleCheckAPIView(APIView):
+    """
+    API endpoint to check if the authenticated user is associated with a hospital
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            user_hospital = hospital.objects.get(user=request.user)
+            return Response({'hospital' : user_hospital.name},status=status.HTTP_200_OK)
+        except hospital.DoesNotExist:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+class HospitalLedgerAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        # Check if user is a hospital
+        try:
+            user_hospital = hospital.objects.get(user=request.user)
+        except hospital.DoesNotExist:
+            return Response({
+                'detail': 'Only hospitals can register patients'
+            }, status=status.HTTP_403_FORBIDDEN)
         
+        # Prepare data for serializer
+        data = request.data.copy()
+        data['hospital'] = user_hospital.id
         
+        # Validate that the patient and doctor exist
+        try:
+            patient_obj = patient.objects.get(id=data.get('patient'))
+            doctor_obj = doctor.objects.get(id=data.get('doctor'))
+        except (patient.DoesNotExist, doctor.DoesNotExist):
+            return Response({
+                'detail': 'Invalid patient or doctor'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create the ledger entry
+        serializer = HospitalLedgerSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+
+class PatientSearchAPIView(APIView):
+    """
+    API endpoint for searching patients
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        query = request.query_params.get('query', '')
+        if len(query) < 2:
+            return Response([])
+        
+        patients = patient.objects.filter(
+            Q(name__icontains=query) | 
+            Q(bloodGroup__icontains=query) |
+            Q(contact__icontains=query)
+        )[:10]  # Limit to 10 results
+        
+        serializer = PatientSerializer(patients, many=True)
+        return Response(serializer.data)
+
+
+class DoctorSearchAPIView(APIView):
+    """
+    API endpoint for searching doctors
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        query = request.query_params.get('query', '')
+        if len(query) < 2:
+            return Response([])
+        
+        doctors = doctor.objects.filter(
+            Q(name__icontains=query) |
+            Q(license__icontains=query) |
+            Q(location__icontains=query)
+        )[:10]  
+        
+        serializer = DoctorSerializer(doctors, many=True)
+        return Response(serializer.data)
+
+class hospitalPatients(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        try:
+            user_hospital = hospital.objects.get(user=request.user)
+        except hospital.DoesNotExist:
+            return Response({
+                'detail': 'Only hospitals can view patients'
+            }, status=status.HTTP_403_FORBIDDEN)
+            
+        patients = hospitalLedger.objects.filter(hospital=user_hospital)
+        serializer = HospitalLedgerWithNestedSerializer(patients, many=True)
+        
+        return Response({
+            'patients': serializer.data
+        })
+
+
+
+
+
+
 @api_view(['POST']) 
 @permission_classes([IsAuthenticated])
 def doctor_create(request):
@@ -248,16 +395,12 @@ def hospital_document_create(request):
         # Handle file upload to cloud storage
         file = request.FILES.get('document')
         cloud_url = upload_to_cloud(file)  # Implement this method
-        
-        # Generate document hash
         doc_hash = Web3.keccak(text=cloud_url)
         
-        # Create Django record
         serializer = HospitalDocumentSerializer(data=request.data)
         if serializer.is_valid():
             instance = serializer.save(document_hash=doc_hash.hex())
             
-            # Add to blockchain
             contract = get_contract()
             tx = contract.functions.addHospitalDocument(
                 request.data['hospital_id'],

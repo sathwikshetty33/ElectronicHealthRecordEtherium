@@ -33,7 +33,8 @@ class patient(models.Model):
         return self.name
 class hospitalLedger(models.Model):
     hospital = models.ForeignKey(hospital, on_delete=models.CASCADE)
-    date = models.DateField()
+    date = models.DateField(auto_now_add=True)
+    reason = models.CharField(max_length=100,blank=True,null=True)
     patient = models.ForeignKey(patient,on_delete=models.CASCADE)
     doctor = models.ForeignKey(doctor, on_delete=models.CASCADE)
     isDischarged = models.BooleanField(default=False)

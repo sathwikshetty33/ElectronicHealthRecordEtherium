@@ -36,3 +36,15 @@ class PatientHospitalDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = hospitalDocument
         fields = 'name','added','id'
+class HospitalLedgerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = hospitalLedger
+        fields = ['id', 'hospital', 'date', 'reason', 'patient', 'doctor', 'isDischarged']
+        read_only_fields = ['date']
+class HospitalLedgerWithNestedSerializer(serializers.ModelSerializer):
+    patient = PatientSerializer()
+    doctor = DoctorSerializer()
+    
+    class Meta:
+        model = hospitalLedger
+        fields = ['id', 'patient', 'doctor', 'reason', 'date', 'isDischarged']

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Patients View</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .patient-link {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .patient-link:hover {
+            text-decoration: underline;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .admitted {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .discharged {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .auth-container {
+            text-align: center;
+            margin: 50px 0;
+        }
+        .error-message {
+            color: red;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+        #loading {
+            text-align: center;
+            margin: 50px 0;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #logout-btn {
+            background-color: #e74c3c;
+            margin-top: 20px;
+        }
+        #logout-btn:hover {
+            background-color: #c0392b;
+        }
+        #become-hospital {
+            background-color: #27ae60;
+            width: 100%;
+        }
+        #become-hospital:hover {
+            background-color: #219955;
+        }
+        .search-container {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .search-box {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .filter-container {
+            display: flex;
+            gap: 10px;
+            margin-left: 10px;
+        }
+        .filter-btn {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            background-color: #f2f2f2;
+            border: 1px solid #ddd;
+        }
+        .filter-btn.active {
+            background-color: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+        .hospital-info {
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .no-patients {
+            text-align: center;
+            margin: 50px 0;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hospital Patients View</h1>
+        
+        <div id="loading">
+            <p>Checking your credentials...</p>
+        </div>
+        
+        <div id="auth-container" class="auth-container" style="display: none;">
+            <h2>Please Login to Continue</h2>
+            <p>You need to be logged in to access the hospital portal.</p>
+            <button id="login-btn" onclick="location.href='/route/'">Login to Continue</button>
+        </div>
+        
+        <div id="role-container" class="auth-container" style="display: none;">
+            <h2>Hospital Registration Required</h2>
+            <p>You need to be registered as a hospital to view patients.</p>
+            <button id="become-hospital">Become a Hospital</button>
+            <button id="logout-btn">Logout</button>
+        </div>
+        
+        <div id="patients-view" style="display: none;">
+            <div id="hospital-info" class="hospital-info"></div>
+            
+            <div class="search-container">
+                <input type="text" id="search-box" class="search-box" placeholder="Search patients...">
+                <div class="filter-container">
+                    <div class="filter-btn active" data-filter="all">All</div>
+                    <div class="filter-btn" data-filter="admitted">Admitted</div>
+                    <div class="filter-btn" data-filter="discharged">Discharged</div>
+                </div>
+            </div>
+            
+            <table id="patients-table">
+                <thead>
+                    <tr>
+                        <th>Patient Name</th>
+                        <th>Doctor</th>
+                        <th>Reason</th>
+                        <th>Date Admitted</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="patients-list">
+                    <!-- Patient data will be inserted here -->
+                </tbody>
+            </table>
+            
+            <div id="no-patients" class="no-patients" style="display: none;">
+                <p>No patients found. Start by admitting a new patient.</p>
+            </div>
+            
+            <div class="action-buttons">
+                <button onclick="location.href='/route/add-patient/'">Register New Patient</button>
+                <button id="view-logout-btn">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Elements
+        const loadingDiv = document.getElementById('loading');
+        const authContainer = document.getElementById('auth-container');
+        const roleContainer = document.getElementById('role-container');
+        const patientsView = document.getElementById('patients-view');
+        const hospitalInfo = document.getElementById('hospital-info');
+        const patientsList = document.getElementById('patients-list');
+        const searchBox = document.getElementById('search-box');
+        const noPatients = document.getElementById('no-patients');
+        
+        // Get cookie function
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+        
+        // Format date function
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString(undefined, options);
+        }
+        
+        // Check authentication status
+        let authToken = getCookie('authToken');
+        let currentHospital = null;
+        let allPatients = [];
+        let filteredPatients = [];
+        
+        // Initialize page
+        async function initPage() {
+            if (!authToken) {
+                showLoginPrompt();
+                return;
+            }
+            
+            try {
+                // Check if user is authenticated and has hospital role
+                const response = await fetch('/check-hospital-role/', {
+                    headers: {
+                        'Authorization': `Token ${authToken}`
+                    }
+                });
+                
+                if (response.status === 200) {
+                    // User is a hospital
+                    currentHospital = { name: "Your Hospital" }; // Default name
+                    await loadPatients();
+                    showPatientsView();
+                } else if (response.status === 403) {
+                    // User is authenticated but not a hospital
+                    showBecomeHospitalPrompt();
+                } else if (response.status === 401) {
+                    // Token is invalid or expired
+                    document.cookie = "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                    showLoginPrompt();
+                } else {
+                    throw new Error('Server error');
+                }
+            } catch (error) {
+                console.error('Error checking authentication:', error);
+                showError('Something went wrong. Please try again later.');
+            }
+        }
+        
+        // Load patients data
+        async function loadPatients() {
+            try {
+                const response = await fetch('/hospital-patients/', {
+                    headers: {
+                        'Authorization': `Token ${authToken}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load patients');
+                }
+                
+                const data = await response.json();
+                allPatients = data.patients || [];
+                filteredPatients = [...allPatients];
+                renderPatients();
+            } catch (error) {
+                console.error('Error loading patients:', error);
+                showError('Error loading patients. Please try again later.');
+            }
+        }
+        
+        // Render patients list
+        function renderPatients() {
+            if (filteredPatients.length === 0) {
+                patientsList.innerHTML = '';
+                noPatients.style.display = 'block';
+                return;
+            }
+            
+            noPatients.style.display = 'none';
+            patientsList.innerHTML = '';
+            
+            filteredPatients.forEach(record => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>
+                        <a href="/route/patient-dashboard/${record.patient.id}" class="patient-link">
+                            ${record.patient.name}
+                        </a>
+                    </td>
+                    <td>${record.doctor.name}</td>
+                    <td>${record.reason}</td>
+                    <td>${formatDate(record.createdAt)}</td>
+                    <td>
+                        <span class="status-badge ${record.isDischarged ? 'discharged' : 'admitted'}">
+                            ${record.isDischarged ? 'Discharged' : 'Admitted'}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="/route/patient-dashboard/${record.patient.id}" class="patient-link">View Details</a>
+                    </td>
+                `;
+                
+                patientsList.appendChild(row);
+            });
+        }
+        
+        // Show login prompt
+        function showLoginPrompt() {
+            loadingDiv.style.display = 'none';
+            authContainer.style.display = 'block';
+            roleContainer.style.display = 'none';
+            patientsView.style.display = 'none';
+        }
+        
+        // Show become hospital prompt
+        function showBecomeHospitalPrompt() {
+            loadingDiv.style.display = 'none';
+            authContainer.style.display = 'none';
+            roleContainer.style.display = 'block';
+            patientsView.style.display = 'none';
+        }
+        
+        // Show patients view
+        function showPatientsView() {
+            loadingDiv.style.display = 'none';
+            authContainer.style.display = 'none';
+            roleContainer.style.display = 'none';
+            patientsView.style.display = 'block';
+            
+            // Display hospital info
+            hospitalInfo.innerHTML = `Hospital: ${currentHospital.name}`;
+        }
+        
+        // Show error message
+        function showError(message) {
+            loadingDiv.innerHTML = `<div class="error-message">${message}</div>`;
+        }
+        
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Update active state
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Apply filter
+                const filter = this.dataset.filter;
+                
+                if (filter === 'all') {
+                    filteredPatients = [...allPatients];
+                } else if (filter === 'admitted') {
+                    filteredPatients = allPatients.filter(p => !p.isDischarged);
+                } else if (filter === 'discharged') {
+                    filteredPatients = allPatients.filter(p => p.isDischarged);
+                }
+                
+                // Apply search if there's text in the search box
+                const searchTerm = searchBox.value.trim().toLowerCase();
+                if (searchTerm) {
+                    filteredPatients = filteredPatients.filter(p => 
+                        p.patient.name.toLowerCase().includes(searchTerm) ||
+                        p.doctor.name.toLowerCase().includes(searchTerm) ||
+                        p.reason.toLowerCase().includes(searchTerm)
+                    );
+                }
+                
+                renderPatients();
+            });
+        });
+        
+        // Search functionality
+        searchBox.addEventListener('input', function() {
+            const searchTerm = this.value.trim().toLowerCase();
+            
+            // Get the current active filter
+            const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+            
+            // First apply the active filter
+            if (activeFilter === 'all') {
+                filteredPatients = [...allPatients];
+            } else if (activeFilter === 'admitted') {
+                filteredPatients = allPatients.filter(p => !p.isDischarged);
+            } else if (activeFilter === 'discharged') {
+                filteredPatients = allPatients.filter(p => p.isDischarged);
+            }
+            
+            // Then apply search
+            if (searchTerm) {
+                filteredPatients = filteredPatients.filter(p => 
+                    p.patient.name.toLowerCase().includes(searchTerm) ||
+                    p.doctor.name.toLowerCase().includes(searchTerm) ||
+                    p.reason.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            renderPatients();
+        });
+        
+        // Become hospital button
+        document.getElementById('become-hospital').addEventListener('click', function() {
+            window.location.href = '/become-hospital/';
+        });
+        
+        // Logout buttons
+        document.querySelectorAll('#logout-btn, #view-logout-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.cookie = "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                window.location.reload();
+            });
+        });
+        
+        // Initialize the page
+        initPage();
+    </script>
+</body>
+</html>
