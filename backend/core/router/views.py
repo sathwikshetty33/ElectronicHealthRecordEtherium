@@ -13,3 +13,5 @@ def addPatient(request):
     return render(request, 'router/patientRegistration.html')
 def hospitalPatients(request):
     return render(request, 'router/patients.html')
+def hospitalDocumetsView(request, id):
+    return render(request, 'router/hospitalDocuments.html',{'id' : id})

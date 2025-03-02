@@ -315,6 +315,10 @@
         // Implement access request functionality
         fetch(`/request-document-access/${docId}`, {
             method: 'POST',
+            headers: {
+                'Authorization': `Token ${authToken}`,
+                
+            }
         })
         .then(response => {
             if (response.ok) {

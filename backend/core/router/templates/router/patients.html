@@ -207,7 +207,7 @@
             </div>
             
             <div class="action-buttons">
-                <button onclick="location.href='/route/add-patient/'">Register New Patient</button>
+                <button id="register-patient-btn">Register New Patient</button>
                 <button id="view-logout-btn">Logout</button>
             </div>
         </div>
@@ -223,6 +223,7 @@
         const patientsList = document.getElementById('patients-list');
         const searchBox = document.getElementById('search-box');
         const noPatients = document.getElementById('no-patients');
+        const registerPatientBtn = document.getElementById('register-patient-btn');
         
         // Get cookie function
         function getCookie(name) {
@@ -254,14 +255,17 @@
             try {
                 // Check if user is authenticated and has hospital role
                 const response = await fetch('/check-hospital-role/', {
+                    method: 'GET',
                     headers: {
-                        'Authorization': `Token ${authToken}`
+                        'Authorization': `Token ${authToken}`,
+                        'Content-Type': 'application/json'
                     }
                 });
                 
                 if (response.status === 200) {
                     // User is a hospital
-                    currentHospital = { name: "Your Hospital" }; // Default name
+                    const data = await response.json();
+                    currentHospital = { name: data.hospital || "Your Hospital" };
                     await loadPatients();
                     showPatientsView();
                 } else if (response.status === 403) {
@@ -284,8 +288,10 @@
         async function loadPatients() {
             try {
                 const response = await fetch('/hospital-patients/', {
+                    method: 'GET',
                     headers: {
-                        'Authorization': `Token ${authToken}`
+                        'Authorization': `Token ${authToken}`,
+                        'Content-Type': 'application/json'
                     }
                 });
                 
@@ -300,6 +306,15 @@
             } catch (error) {
                 console.error('Error loading patients:', error);
                 showError('Error loading patients. Please try again later.');
+            }
+        }
+        
+        // Navigate to patient dashboard with the record ID
+        function navigateToPatientDashboard(patientId) {
+            // Find the record that contains this patient
+            const record = allPatients.find(r => r.patient.id == patientId);
+            if (record) {
+                window.location.href = `/route/hospital-document/${record.id}`;
             }
         }
         
@@ -319,24 +334,42 @@
                 
                 row.innerHTML = `
                     <td>
-                        <a href="/route/patient-dashboard/${record.patient.id}" class="patient-link">
+                        <a href="javascript:void(0);" class="patient-link" data-patient-id="${record.patient.id}" data-record-id="${record.id}">
                             ${record.patient.name}
                         </a>
                     </td>
-                    <td>${record.doctor.name}</td>
+                    <td>
+                        <a href="/route/doctor-dashboard/${record.doctor.id}" class="patient-link">
+                            ${record.doctor.name}
+                        </a>
+                    </td>
                     <td>${record.reason}</td>
-                    <td>${formatDate(record.createdAt)}</td>
+                    <td>${formatDate(record.date || record.createdAt)}</td>
                     <td>
                         <span class="status-badge ${record.isDischarged ? 'discharged' : 'admitted'}">
                             ${record.isDischarged ? 'Discharged' : 'Admitted'}
                         </span>
                     </td>
                     <td>
-                        <a href="/route/patient-dashboard/${record.patient.id}" class="patient-link">View Details</a>
+                        <a href="/route/hospital-document/${record.id}" class="patient-link">View Details</a>
                     </td>
                 `;
                 
                 patientsList.appendChild(row);
+            });
+            
+            // Add event listeners to patient links
+            document.querySelectorAll('.patient-link[data-patient-id]').forEach(link => {
+                link.addEventListener('click', function() {
+                    const patientId = this.getAttribute('data-patient-id');
+                    const recordId = this.getAttribute('data-record-id');
+                    
+                    if (recordId) {
+                        window.location.href = `/route/hospital-document/${recordId}`;
+                    } else {
+                        navigateToPatientDashboard(patientId);
+                    }
+                });
             });
         }
         
@@ -434,13 +467,23 @@
         
         // Become hospital button
         document.getElementById('become-hospital').addEventListener('click', function() {
+            // Store token in localStorage temporarily before redirect
+            localStorage.setItem('tempAuthToken', authToken);
             window.location.href = '/become-hospital/';
+        });
+        
+        // Register new patient button
+        registerPatientBtn.addEventListener('click', function() {
+            // Store token in localStorage temporarily before redirect
+            localStorage.setItem('tempAuthToken', authToken);
+            window.location.href = '/route/add-patient/';
         });
         
         // Logout buttons
         document.querySelectorAll('#logout-btn, #view-logout-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.cookie = "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                localStorage.removeItem('tempAuthToken');
                 window.location.reload();
             });
         });

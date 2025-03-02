@@ -241,8 +241,8 @@ class checkHospital(APIView):
             return Response({"error": "Invalid authentication token"}, status=status.HTTP_403_FORBIDDEN)
         try:
             patd = hospital.objects.get(id=id)
-        except patient.DoesNotExist:
-            return Response({"error": "Patient does not exist."}, status=status.HTTP_404_NOT_FOUND)
+        except hospital.DoesNotExist:
+            return Response({"error": "hospital does not exist."}, status=status.HTTP_404_NOT_FOUND)
         if token.user!= patd.user:
             return Response({"error": "Unauthorized access"}, status=status.HTTP_401_UNAUTHORIZED)
         return Response(status=status.HTTP_200_OK)
@@ -251,8 +251,8 @@ class HospitalRoleCheckAPIView(APIView):
     """
     API endpoint to check if the authenticated user is associated with a hospital
     """
-    permission_classes = [IsAuthenticated]
-    
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]    
     def get(self, request):
         try:
             user_hospital = hospital.objects.get(user=request.user)
@@ -262,6 +262,7 @@ class HospitalRoleCheckAPIView(APIView):
 
 class HospitalLedgerAPIView(APIView):
 
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
@@ -301,6 +302,7 @@ class PatientSearchAPIView(APIView):
     """
     API endpoint for searching patients
     """
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
@@ -322,6 +324,7 @@ class DoctorSearchAPIView(APIView):
     """
     API endpoint for searching doctors
     """
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
@@ -339,6 +342,7 @@ class DoctorSearchAPIView(APIView):
         return Response(serializer.data)
 
 class hospitalPatients(APIView):
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     def get(self, request):
         try:
@@ -355,9 +359,33 @@ class hospitalPatients(APIView):
             'patients': serializer.data
         })
 
-
-
-
+class hospitalDocumetsView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    def get(self,request,id):
+        try:
+            user_hospital = hospital.objects.get(user=request.user)
+        except hospital.DoesNotExist:
+            return Response({
+                'detail': 'Only hospitals can view documents'
+            }, status=status.HTTP_403_FORBIDDEN)
+        try:
+            pat = hospitalLedger.objects.get(id=id)
+        except hospitalLedger.DoesNotExist:
+            return Response({
+                'detail': 'Ledger  does not exist'
+            }, status=status.HTTP_404_NOT_FOUND)
+        try:
+            documents = hospitalDocument.objects.filter(hospitalLedger=pat)
+        except hospitalDocument.DoesNotExist:
+            return Response({
+                'detail': 'No documents found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        serializer = HospitalDocumentSerializer(documents, many=True)
+        
+        return Response({
+            'documents': serializer.data
+        })
 
 
 @api_view(['POST']) 

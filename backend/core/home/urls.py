@@ -24,5 +24,5 @@ urlpatterns = [
     path('patients/search/', PatientSearchAPIView.as_view(), name='patient-search'),
     path('doctors/search/', DoctorSearchAPIView.as_view(), name='doctor-search'),
     path('hospital-patients/', hospitalPatients.as_view(), name='hospital-patients'),
-
+    path('hospital-documents/<int:id>/',hospitalDocumetsView.as_view(), name='hospital-document'),
 ]

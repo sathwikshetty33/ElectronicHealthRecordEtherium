@@ -212,6 +212,7 @@
                 fetch(`/check-hospital/${hospitalId}`, {
                     method: 'GET',
                     headers: {
+                        'Authorization': `Bearer ${authToken}`,
                         'Content-Type': 'application/json'
                     }
                 })
