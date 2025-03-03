@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from .views import *
 urlpatterns = [
+    path('own/',ContractOwnerView.as_view(),name='own'),
     path('hospital-login/',HospitalLogin.as_view(),name='hoslog'),
     path('patient-login/',PatientLogin.as_view(),name='patlog'),
     path('doctor-login/',DoctorLogin.as_view(),name='doclog'),
@@ -25,4 +26,8 @@ urlpatterns = [
     path('doctors/search/', DoctorSearchAPIView.as_view(), name='doctor-search'),
     path('hospital-patients/', hospitalPatients.as_view(), name='hospital-patients'),
     path('hospital-documents/<int:id>/',hospitalDocumetsView.as_view(), name='hospital-document'),
+    path("upload/", UploadToIPFS.as_view(), name="upload_to_ipfs"),
+    path('hospital-upload-document/', UploadToIPFSHospital.as_view(), name='hospital_upload_document'),
+    path('patients/<int:patient_id>/documents/<str:doc_id>/', PatientDocumentView.as_view(), name='patient-document'),
+
 ]

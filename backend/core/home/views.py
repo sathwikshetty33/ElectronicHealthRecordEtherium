@@ -24,7 +24,7 @@ from rest_framework.authentication import TokenAuthentication
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 
-address = "0x5fbdb2315678afecb367f032d93f642f64180aa3"  
+address = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"  
 checksum_address = Web3.to_checksum_address(address) 
 
 print(checksum_address)  
@@ -37,8 +37,8 @@ LOCAL_NODE_URL = "http://127.0.0.1:8545"
 web3 = Web3(Web3.HTTPProvider(LOCAL_NODE_URL))
 
 
-CONTRACT_ADDRESS = "0x5fbdb2315678afecb367f032d93f642f64180aa3"  
-contract = web3.eth.contract(address=Web3.to_checksum_address(address), abi=contract_abi)
+CONTRACT_ADDRESS = "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512"  
+contract = web3.eth.contract(address=Web3.to_checksum_address(CONTRACT_ADDRESS), abi=contract_abi)
 
 class ContractOwnerView(APIView):
     def get(self, request):
@@ -58,18 +58,22 @@ class HospitalLogin(APIView):
             username = serializer.data['username']
             password = serializer.data['password']
             add = serializer.data['address']
+            print(add)
             us = authenticate(username=username,password=password)
             if us is None:
                 return  Response({
                     "error" : "Invalid username and password"
                 },status=status.HTTP_401_UNAUTHORIZED)
-            d = hospital.objects.filter(user=us).first()
-            if d is None:
+            try:
+                d = hospital.objects.get(user=us)
+                print(d.address)
+            except hospital.DoesNotExist:
                 return  Response({
                     "error" : "You are not Hospital register as one"
                 },status=status.HTTP_401_UNAUTHORIZED)
-            d = hospital.objects.filter(user=us,address=add).first()
-            if d is None:
+            try:
+                d = hospital.objects.get(user=us,address=add)
+            except hospital.DoesNotExist:
                 return  Response({
                     "error" : "Incorrect metamask address"
                 },status=status.HTTP_401_UNAUTHORIZED)
@@ -182,10 +186,10 @@ class PatientDoc(APIView):
         patd = patientDocument.objects.filter(patient=pat)
         patd_serializer = PatientPersonalDocumentSerializer(patd,many=True)
         try: 
-            hospd = hospitalLedger.objects.get(patient=pat)
+            hospd = hospitalLedger.objects.filter(patient=pat)
         except hospitalLedger.DoesNotExist:
             return Response({"error": "No hospital document found for this patient."}, status=status.HTTP_404_NOT_FOUND)
-        hosp_d = hospitalDocument.objects.filter(hospitalLedger = hospd)
+        hosp_d = hospitalDocument.objects.filter(hospitalLedger__in = hospd)
         hosp_d_serializer = PatientHospitalDocumentSerializer(hosp_d, many=True)
         context = {
             "patient": patd_serializer.data,
@@ -386,6 +390,302 @@ class hospitalDocumetsView(APIView):
         return Response({
             'documents': serializer.data
         })
+
+import requests
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser
+from django.conf import settings
+
+class UploadToIPFS(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request):
+        try:
+            pat = patient.objects.get(user=request.user)
+        except patient.DoesNotExist:
+            return Response({
+                'detail': 'Only patients can upload documents'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        if 'file' not in request.FILES or 'name' not in request.data:
+            return Response({"error": "File and name are required"}, status=400)
+
+        file = request.FILES["file"]
+        name = request.data["name"]
+
+        # Upload to IPFS
+        try:
+            pinata_url = "https://api.pinata.cloud/pinning/pinFileToIPFS"
+            headers = {
+                "pinata_api_key": settings.PINATA_API_KEY,
+                "pinata_secret_api_key": settings.PINATA_SECRET_KEY,
+            }
+            files = {"file": (name, file.read())}
+
+            response = requests.post(pinata_url, headers=headers, files=files)
+
+            if response.status_code != 200:
+                return Response({"error": f"Failed to upload to IPFS: {response.text}"}, status=500)
+                
+            ipfs_data = response.json()
+            cid = ipfs_data["IpfsHash"]
+        except Exception as e:
+            return Response({"error": f"IPFS upload error: {str(e)}"}, status=500)
+
+        # Store in Blockchain
+        try:
+            web3 = Web3(Web3.HTTPProvider(LOCAL_NODE_URL))
+            
+            # Verify connection to blockchain
+            if not web3.is_connected():
+                return Response({"error": "Cannot connect to Ethereum node"}, status=500)
+            
+            # Verify contract address format
+            try:
+                contract_address = Web3.to_checksum_address(CONTRACT_ADDRESS)
+            except ValueError:
+                return Response({"error": f"Invalid contract address format: {address}"}, status=400)
+                
+            # Create contract instance
+            contract = web3.eth.contract(address=contract_address, abi=contract_abi)
+            
+            # Verify checksum_address exists and is valid
+            try:
+                sender_address = Web3.to_checksum_address(checksum_address)
+                if web3.eth.get_balance(sender_address) == 0:
+                    return Response({"error": "Sender account has no balance"}, status=400)
+            except ValueError:
+                return Response({"error": f"Invalid sender address format: {checksum_address}"}, status=400)
+            owner = contract.functions.own().call()  # Assuming there's an owner() function
+            if owner.lower() != sender_address.lower():
+                return Response({"error": "Sender is not the contract owner"}, status=403)
+            # Get current timestamp from blockchain
+            current_timestamp = int(web3.eth.get_block('latest')['timestamp'])
+            patd = patientDocument.objects.create(
+                name=name,
+                patient=pat,
+                hash=cid,
+            )
+            patd.save()
+            #     function addPatientDocument(uint _patid,uint _docid, string memory _hash,uint256 _timestamp,bool _isPrivate) onlyOwner external {
+        # patientDocuments[_docid] = PatientDocument(_hash,_docid,_timestamp,_patid,_isPrivate);
+        # emit DocumentAdded(_docid, _hash, false);
+            tx_hash = contract.functions.addPatientDocument(
+                pat.id,patd.id, cid, current_timestamp, False
+            ).transact({'from': sender_address})
+            print(pat.id,patd.id)
+            receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+            event_signature = web3.keccak(text="DocumentAdded(uint256,string,bool)").hex()
+            for log in receipt.logs:
+                if log['topics'][0].hex() == event_signature:
+                    print("DocumentAdded event found:", log)
+            if not receipt.status:
+                return Response({"error": "Transaction failed"}, status=500)
+                
+            # Save to database only after blockchain confirmation
+           
+            
+            return Response({
+                "message": "File uploaded to IPFS and stored on Blockchain",
+                "cid": cid,
+                "url": f"https://gateway.pinata.cloud/ipfs/{cid}",
+                "transaction": receipt.transactionHash.hex()
+            })
+            
+        except Exception as e:
+            return Response({"error": f"Blockchain error: {str(e)}"}, status=500)
+
+class UploadToIPFSHospital(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request):
+        try:
+            hosp = hospital.objects.get(user=request.user)
+        except hospital.DoesNotExist:
+            return Response({
+                'detail': 'Only hospitals can upload documents'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        if 'file' not in request.FILES or 'name' not in request.data or 'hospitalLedger' not in request.data:
+            return Response({"error": "File, name, and ledgerId are required"}, status=400)
+
+        file = request.FILES["file"]
+        name = request.data["name"]
+        ledger_id = request.data["hospitalLedger"]
+        try: 
+            ledger = hospitalLedger.objects.get(id=ledger_id)
+        except hospitalLedger.DoesNotExist:
+            return Response({
+                'detail': 'Ledger does not exist'
+            }, status=status.HTTP_404_NOT_FOUND)
+        # Get hospital's blockchain address
+        hospital_address = hosp.address
+        if not hospital_address:
+            return Response({"error": "Hospital has no blockchain address configured"}, status=400)
+
+        try:
+            pinata_url = "https://api.pinata.cloud/pinning/pinFileToIPFS"
+            headers = {
+                "pinata_api_key": settings.PINATA_API_KEY,
+                "pinata_secret_api_key": settings.PINATA_SECRET_KEY,
+            }
+            files = {"file": (name, file.read())}
+
+            response = requests.post(pinata_url, headers=headers, files=files)
+
+            if response.status_code != 200:
+                return Response({"error": f"Failed to upload to IPFS: {response.text}"}, status=500)
+                
+            ipfs_data = response.json()
+            cid = ipfs_data["IpfsHash"]
+            hosp_doc = hospitalDocument.objects.create(
+                name=name,
+                hospitalLedger=ledger,
+            )
+            hosp_doc.save()
+            document_id = hosp_doc.id  # Generate a unique document ID
+        except Exception as e:
+            return Response({"error": f"IPFS upload error: {str(e)}"}, status=500)
+
+        # Store in Blockchain
+        try:
+            web3 = Web3(Web3.HTTPProvider(LOCAL_NODE_URL))
+            
+            # Verify connection to blockchain
+            if not web3.is_connected():
+                return Response({"error": "Cannot connect to Ethereum node"}, status=500)
+            
+            # Verify contract address format
+            try:
+                contract_address = Web3.to_checksum_address(address)
+            except ValueError:
+                return Response({"error": f"Invalid contract address format: {address}"}, status=400)
+                
+            # Create contract instance
+            contract = web3.eth.contract(address=contract_address, abi=contract_abi)            
+            # Verify hospital address is valid
+            try:
+                sender_address = Web3.to_checksum_address(hospital_address)
+                if web3.eth.get_balance(sender_address) == 0:
+                    return Response({"error": "Hospital account has no balance for transaction"}, status=400)
+            except ValueError:
+                return Response({"error": f"Invalid hospital address format: {hospital_address}"}, status=400)
+            current_timestamp = int(web3.eth.get_block('latest')['timestamp'])
+
+            
+            # function addHospitalDocument(uint _patid,string  memory _hash,uint256 _documentId,uint256 _timestamp,bool vis)
+            tx_hash = contract.functions.addHospitalDocument(
+               ledger.patient.id,  cid,document_id, current_timestamp, False
+            ).transact({'from': sender_address})
+            receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+            
+            if not receipt.status:
+                return Response({"error": "Transaction failed"}, status=500)          
+           
+            
+            document_url = f"https://gateway.pinata.cloud/ipfs/{cid}"
+            print(f"Document uploaded and stored at URL: {document_url}")
+            
+            return Response({
+                "message": "File uploaded to IPFS and stored on Blockchain",
+                "cid": cid,
+                "url": document_url,
+                "transaction": receipt.transactionHash.hex(),
+                "ledgerId": ledger_id
+            })
+        except Exception as e:
+            return Response({"error": f"Blockchain error: {str(e)}"}, status=500)
+
+class PatientDocumentView(APIView):
+    """
+    API view to get patient document from blockchain and redirect to IPFS
+    """
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    
+    def get(self, request, patient_id, doc_id):
+        print(f"User: {request.user.username}, Patient ID: {patient_id}, Doc ID: {doc_id}")
+        
+        try:
+            # Get the document object from your database
+            doc = patientDocument.objects.get(id=doc_id)
+            print(f"Document found: {doc.id}, Patient: {doc.patient.id}")
+            
+            # Verify the document belongs to the requested patient
+            if doc.patient.id != patient_id:
+                print(f"Document patient mismatch: {doc.patient.id} != {patient_id}")
+                return Response({
+                    'detail': 'Document does not belong to this patient'
+                }, status=status.HTTP_403_FORBIDDEN)
+            
+            # Connect to blockchain
+            w3 = Web3(Web3.HTTPProvider(LOCAL_NODE_URL))
+            if not w3.is_connected():
+                print("Failed to connect to Ethereum node")
+                return Response({"error": "Blockchain connection failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+            contract = w3.eth.contract(address=Web3.to_checksum_address(CONTRACT_ADDRESS), abi=contract_abi)
+            print(f"Connected to contract at {address}")
+        #         function getPatientDocument(uint _patid,uint _docid) view onlyOwner external returns(string memory){
+        # if (patientDocuments[_docid].isPrivate){
+        #     require(patientDocumentAuthorizations[_docid][msg.sender] ||  _patid == patientDocuments[_docid].patientId, "Access denied");
+        # }
+        # return patientDocuments[_docid].add;
+            try:
+                document_cid = contract.functions.getPatientDocument(
+                    int(doc.patient.id),
+                    int(doc_id)
+                ).call({'from': checksum_address})
+                print(f"Contract returned CID: {document_cid}")
+            except Exception as contract_error:
+                print(f"Contract call failed: {str(contract_error)}")
+                return Response({"error": f"Blockchain contract error: {str(contract_error)}"}, 
+                               status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            if not document_cid:
+                print("Empty CID returned from contract")
+                return Response({
+                    "error": "Document not found or access denied"
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Construct complete IPFS URL with Pinata gateway
+            ipfs_url = f"https://gateway.pinata.cloud/ipfs/{document_cid}"
+            print(f"Returning IPFS URL: {ipfs_url}")
+            
+            # Return the URL in the response
+            return Response({"url": ipfs_url}, status=status.HTTP_200_OK)
+                
+        except patientDocument.DoesNotExist:
+            print(f"Document with ID {doc_id} not found in database")
+            return Response({
+                'detail': 'Document does not exist'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            import traceback
+            print("Exception in view:")
+            traceback.print_exc()
+            return Response({
+                "error": f"Failed to retrieve document: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 @api_view(['POST']) 

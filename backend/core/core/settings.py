@@ -138,3 +138,10 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://localhost:8000',
 ]
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+PINATA_API_KEY = os.getenv("PINATA_API_KEY")
+PINATA_SECRET_KEY = os.getenv("PINATA_SECRET_KEY")

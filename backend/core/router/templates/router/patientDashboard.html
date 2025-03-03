@@ -192,7 +192,7 @@
     function addDocument() {
         console.log("Adding new document");
         // Implement document adding functionality
-        window.location.href = `/add-document/${patientId}`;
+        window.location.href = `/route/patient-upload/`;
     }
 
     // Fetch patient details
@@ -276,14 +276,14 @@
                 if (response.status === 200) {
                     // Access granted - show view button
                     accessControlDiv.innerHTML = `
-                        <button class="doc-btn view-btn" onclick="viewDocument(${docId})">
+                        <button class="doc-btn view-btn" onclick="viewDocument('${docId}')">
                             View Document
                         </button>
                     `;
                 } else if (response.status === 401) {
                     // Not authorized but can request - show request button
                     accessControlDiv.innerHTML = `
-                        <button class="doc-btn request-btn" onclick="requestAccess(${docId})">
+                        <button class="doc-btn request-btn" onclick="requestAccess('${docId}')">
                             Request Access
                         </button>
                     `;
@@ -305,19 +305,57 @@
     // View document function
     function viewDocument(docId) {
         console.log(`Viewing document ${docId}`);
-        // Implement document viewing functionality
-        window.location.href = `/view-document/${docId}`;
+        
+        // Get auth token from cookies
+        const authToken = getCookie('authToken');
+        
+        // Make API request using the correct path format
+        fetch(`/patients/${patientId}/documents/${docId}/`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Token ${authToken}`
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Failed to fetch document: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.url) {
+                // Redirect to the IPFS URL on success
+                window.location.href = data.url;
+            } else {
+                throw new Error('No URL in response');
+            }
+        })
+        .catch(error => {
+            console.error(`Error viewing document ${docId}:`, error);
+            alert('Error accessing document');
+        });
+    }
+
+    // Helper function to get cookie by name
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return '';
     }
 
     // Request access function
     function requestAccess(docId) {
         console.log(`Requesting access to document ${docId}`);
+        
+        // Get auth token from cookies
+        const authToken = getCookie('authToken');
+        
         // Implement access request functionality
         fetch(`/request-document-access/${docId}`, {
             method: 'POST',
             headers: {
-                'Authorization': `Token ${authToken}`,
-                
+                'Authorization': `Token ${authToken}`
             }
         })
         .then(response => {

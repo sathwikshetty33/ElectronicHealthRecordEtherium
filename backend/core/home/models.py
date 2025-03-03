@@ -52,6 +52,7 @@ class patientDocument(models.Model):
     patient = models.ForeignKey(patient, on_delete=models.CASCADE)
     isPrivate = models.BooleanField(default=True)
     added = models.DateTimeField(auto_now_add=True,blank=True,null=True)
+    hash = models.CharField(max_length=100,blank=True,null=True)
     def __str__(self):
         return f"{self.patient.name}-{self.id}"
 class documentAcess(models.Model):
