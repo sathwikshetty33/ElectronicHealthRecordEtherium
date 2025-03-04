@@ -37,7 +37,7 @@ LOCAL_NODE_URL = "http://127.0.0.1:8545"
 web3 = Web3(Web3.HTTPProvider(LOCAL_NODE_URL))
 
 
-CONTRACT_ADDRESS = "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512"  
+CONTRACT_ADDRESS = "0x5fbdb2315678afecb367f032d93f642f64180aa3"  
 contract = web3.eth.contract(address=Web3.to_checksum_address(CONTRACT_ADDRESS), abi=contract_abi)
 
 class ContractOwnerView(APIView):
@@ -216,6 +216,22 @@ class getPatientDocStatus(APIView):
         if token.user!= patd.patient.user:
             return Response({"error": "Unauthorized access"}, status=status.HTTP_401_UNAUTHORIZED)
         return Response(status=status.HTTP_200_OK)
+    
+class getHospitalDocStatus(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    def get(self,request, id):
+        try:
+            patd = hospitalDocument.objects.get(id=id)
+        except hospitalDocument.DoesNotExist:
+            return Response({"error": "Hospital document does not exist."}, status=status.HTTP_404_NOT_FOUND)
+        if patd.isPrivate == False:
+            return Response(status=status.HTTP_200_OK)
+        if patd.hospitalLedger.hospital.user == request.user:
+            return Response(status=status.HTTP_200_OK)
+        if patd.hospitalLedger.patient.user == request.user:
+            return Response(status=status.HTTP_200_OK)
+        return Response({"error": "Unauthorized access"}, status=status.HTTP_401_UNAUTHORIZED)
 class checkPatient(APIView):
     def get(self, request, id):
         try:
@@ -290,8 +306,6 @@ class HospitalLedgerAPIView(APIView):
             return Response({
                 'detail': 'Invalid patient or doctor'
             }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Create the ledger entry
         serializer = HospitalLedgerSerializer(data=data)
         if serializer.is_valid():
             serializer.save()

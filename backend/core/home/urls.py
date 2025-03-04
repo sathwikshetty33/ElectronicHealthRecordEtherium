@@ -29,5 +29,5 @@ urlpatterns = [
     path("upload/", UploadToIPFS.as_view(), name="upload_to_ipfs"),
     path('hospital-upload-document/', UploadToIPFSHospital.as_view(), name='hospital_upload_document'),
     path('patients/<int:patient_id>/documents/<str:doc_id>/', PatientDocumentView.as_view(), name='patient-document'),
-
+    path('hospital-document-check/<int:id>',getHospitalDocStatus.as_view(),name='hospital-document-check'),
 ]

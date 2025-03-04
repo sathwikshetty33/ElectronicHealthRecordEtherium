@@ -230,7 +230,7 @@
                     div.innerHTML = `
                         <strong>${doc.name}</strong><br>
                         ${new Date(doc.added).toLocaleDateString()}<br>
-                        <div id="access-control-${docId}" class="access-control">
+                        <div id="patient-access-control-${docId}" class="access-control">
                             <div class="loading">Checking access...</div>
                         </div>
                     `;
@@ -238,10 +238,10 @@
                     
                     // Check document access permission if we have an ID
                     if (docId) {
-                        checkDocumentAccess(docId);
+                        checkPatientDocumentAccess(docId);
                     } else {
                         // Update access control div if no ID
-                        document.getElementById(`access-control-${docId}`).innerHTML = 
+                        document.getElementById(`patient-access-control-${docId}`).innerHTML = 
                             '<div class="error">Invalid document ID</div>';
                     }
                 });
@@ -251,10 +251,30 @@
 
             if (data.hospital && data.hospital.length > 0) {
                 data.hospital.forEach(doc => {
+                    const docId = doc.id;
+                    if (!docId) {
+                        console.error("Hospital document missing ID:", doc);
+                    }
+                    
                     const div = document.createElement("div");
                     div.classList.add("document");
-                    div.innerHTML = `<strong>${doc.name}</strong><br>${new Date(doc.added).toLocaleDateString()}`;
+                    div.innerHTML = `
+                        <strong>${doc.name}</strong><br>
+                        ${new Date(doc.added).toLocaleDateString()}<br>
+                        <div id="hospital-access-control-${docId}" class="access-control">
+                            <div class="loading">Checking access...</div>
+                        </div>
+                    `;
                     hospitalSlider.appendChild(div);
+                    
+                    // Check hospital document access permission if we have an ID
+                    if (docId) {
+                        checkHospitalDocumentAccess(docId);
+                    } else {
+                        // Update access control div if no ID
+                        document.getElementById(`hospital-access-control-${docId}`).innerHTML = 
+                            '<div class="error">Invalid document ID</div>';
+                    }
                 });
             } else {
                 hospitalSlider.innerHTML = "<p class='empty-message'>No hospital documents found.</p>";
@@ -265,25 +285,25 @@
         })
         .catch(error => console.error("Error fetching documents:", error));
 
-    // Check document access permissions
-    function checkDocumentAccess(docId) {
-        console.log(`Checking access for document ID: ${docId}`);
+    // Check patient document access permissions
+    function checkPatientDocumentAccess(docId) {
+        console.log(`Checking access for patient document ID: ${docId}`);
         
         fetch(`/patient-document-access/${docId}`)
             .then(response => {
-                const accessControlDiv = document.getElementById(`access-control-${docId}`);
+                const accessControlDiv = document.getElementById(`patient-access-control-${docId}`);
                 
                 if (response.status === 200) {
                     // Access granted - show view button
                     accessControlDiv.innerHTML = `
-                        <button class="doc-btn view-btn" onclick="viewDocument('${docId}')">
+                        <button class="doc-btn view-btn" onclick="viewPatientDocument('${docId}')">
                             View Document
                         </button>
                     `;
                 } else if (response.status === 401) {
                     // Not authorized but can request - show request button
                     accessControlDiv.innerHTML = `
-                        <button class="doc-btn request-btn" onclick="requestAccess('${docId}')">
+                        <button class="doc-btn request-btn" onclick="requestPatientAccess('${docId}')">
                             Request Access
                         </button>
                     `;
@@ -296,15 +316,60 @@
                 }
             })
             .catch(error => {
-                console.error(`Error checking document access for ID ${docId}:`, error);
-                const accessControlDiv = document.getElementById(`access-control-${docId}`);
+                console.error(`Error checking patient document access for ID ${docId}:`, error);
+                const accessControlDiv = document.getElementById(`patient-access-control-${docId}`);
                 accessControlDiv.innerHTML = '<div class="error">Error checking access</div>';
             });
     }
 
-    // View document function
-    function viewDocument(docId) {
-        console.log(`Viewing document ${docId}`);
+    // Check hospital document access permissions
+    function checkHospitalDocumentAccess(docId) {
+        console.log(`Checking access for hospital document ID: ${docId}`);
+        
+        // Get auth token from cookies
+        const authToken = getCookie('authToken');
+        
+        fetch(`/hospital-document-check/${docId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': authToken ? `Token ${authToken}` : ''
+            }
+        })
+            .then(response => {
+                const accessControlDiv = document.getElementById(`hospital-access-control-${docId}`);
+                
+                if (response.status === 200) {
+                    // Access granted - show view button
+                    accessControlDiv.innerHTML = `
+                        <button class="doc-btn view-btn" onclick="viewHospitalDocument('${docId}')">
+                            View Document
+                        </button>
+                    `;
+                } else if (response.status === 401) {
+                    // Not authorized but can request - show request button
+                    accessControlDiv.innerHTML = `
+                        <button class="doc-btn request-btn" onclick="requestHospitalAccess('${docId}')">
+                            Request Access
+                        </button>
+                    `;
+                } else if (response.status === 403) {
+                    // Forbidden - show nothing
+                    accessControlDiv.innerHTML = '';
+                } else {
+                    // Other error
+                    accessControlDiv.innerHTML = '<div class="error">Unable to check access</div>';
+                }
+            })
+            .catch(error => {
+                console.error(`Error checking hospital document access for ID ${docId}:`, error);
+                const accessControlDiv = document.getElementById(`hospital-access-control-${docId}`);
+                accessControlDiv.innerHTML = '<div class="error">Error checking access</div>';
+            });
+    }
+
+    // View patient document function
+    function viewPatientDocument(docId) {
+        console.log(`Viewing patient document ${docId}`);
         
         // Get auth token from cookies
         const authToken = getCookie('authToken');
@@ -331,8 +396,42 @@
             }
         })
         .catch(error => {
-            console.error(`Error viewing document ${docId}:`, error);
+            console.error(`Error viewing patient document ${docId}:`, error);
             alert('Error accessing document');
+        });
+    }
+
+    // View hospital document function
+    function viewHospitalDocument(docId) {
+        console.log(`Viewing hospital document ${docId}`);
+        
+        // Get auth token from cookies
+        const authToken = getCookie('authToken');
+        
+        // Make API request using the correct path format for hospital documents
+        fetch(`/patients/${patientId}/hospital-documents/${docId}/`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Token ${authToken}`
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Failed to fetch hospital document: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.url) {
+                // Redirect to the URL on success
+                window.location.href = data.url;
+            } else {
+                throw new Error('No URL in response');
+            }
+        })
+        .catch(error => {
+            console.error(`Error viewing hospital document ${docId}:`, error);
+            alert('Error accessing hospital document');
         });
     }
 
@@ -344,9 +443,9 @@
         return '';
     }
 
-    // Request access function
-    function requestAccess(docId) {
-        console.log(`Requesting access to document ${docId}`);
+    // Request patient document access function
+    function requestPatientAccess(docId) {
+        console.log(`Requesting access to patient document ${docId}`);
         
         // Get auth token from cookies
         const authToken = getCookie('authToken');
@@ -366,8 +465,35 @@
             }
         })
         .catch(error => {
-            console.error(`Error requesting access for document ${docId}:`, error);
+            console.error(`Error requesting access for patient document ${docId}:`, error);
             alert('Error requesting access');
+        });
+    }
+
+    // Request hospital document access function
+    function requestHospitalAccess(docId) {
+        console.log(`Requesting access to hospital document ${docId}`);
+        
+        // Get auth token from cookies
+        const authToken = getCookie('authToken');
+        
+        // Implement access request functionality for hospital documents
+        fetch(`/request-hospital-document-access/${docId}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Token ${authToken}`
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                alert('Hospital document access request submitted successfully');
+            } else {
+                alert('Failed to submit hospital document access request');
+            }
+        })
+        .catch(error => {
+            console.error(`Error requesting access for hospital document ${docId}:`, error);
+            alert('Error requesting hospital document access');
         });
     }
 
