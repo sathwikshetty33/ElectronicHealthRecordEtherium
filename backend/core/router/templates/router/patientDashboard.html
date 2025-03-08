@@ -409,7 +409,7 @@
         const authToken = getCookie('authToken');
         
         // Make API request using the correct path format for hospital documents
-        fetch(`/patients/${patientId}/hospital-documents/${docId}/`, {
+        fetch(`/hospital-documents-view/${docId}/`, {
             method: 'GET',
             headers: {
                 'Authorization': `Token ${authToken}`
