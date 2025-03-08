@@ -1,7 +1,7 @@
-# ElectronicHealthRecordEtherium 🚀
+# ArogyaKhosh 🚀
 
 ## Overview
-ElectronicHealthRecordEtherium is a **blockchain-powered** healthcare management system that securely stores and shares **electronic health records (EHRs)** among hospitals. It integrates **AI for healthcare chatbots**, **machine learning for protein analysis**, and a **QR-based emergency response system** to send ambulance requests in case of an accident.
+ArogyaKhosh is a **blockchain-powered** healthcare management system that securely stores and shares **electronic health records (EHRs)** among hospitals. It integrates **AI for healthcare chatbots**, **machine learning for protein analysis**, and a **QR-based emergency response system** to send ambulance requests in case of an accident.
 
 ---
 
@@ -37,7 +37,7 @@ ElectronicHealthRecordEtherium is a **blockchain-powered** healthcare management
 ### Steps
 1. **Clone the repository**
    ```sh
-   git clone https://github.com/YourUsername/ElectronicHealthRecordEtherium.git
+   git clone https://github.com/sathwikshetty33/ElectronicHealthRecordEtherium.git
    cd ElectronicHealthRecordEtherium
    ```
 2. **Install dependencies**
@@ -121,5 +121,5 @@ This project is licensed under the **MIT License**.
 ---
 
 ## Contact 📬
-- **GitHub:** [YourUsername](https://github.com/YourUsername)
-- **Email:** your.email@example.com
+- **GitHub:** [YourUsername](https://github.com/sathwikshetty33)
+- **Email:** sathwikshetty9876@gmail.com
