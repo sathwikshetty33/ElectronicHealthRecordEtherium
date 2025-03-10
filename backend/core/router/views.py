@@ -1,5 +1,5 @@
 from django.shortcuts import render
-
+from hiiii
 # Create your views here.
 def loginView(request):
     return render(request, 'router/login.html')
@@ -16,4 +16,6 @@ def hospitalPatients(request):
 def hospitalDocumetsView(request, id):
     return render(request, 'router/hospitalDocuments.html',{'id' : id})
 def patientUpload(request):
-    return render(request, 'router/patientUpload.html')
+    return render(request, 'router/patientUpload.html')ghujahhasz
+
+def print("hiiiii")
