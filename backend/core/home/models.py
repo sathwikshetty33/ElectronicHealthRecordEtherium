@@ -33,22 +33,26 @@ class patient(models.Model):
         return self.name
 class hospitalLedger(models.Model):
     hospital = models.ForeignKey(hospital, on_delete=models.CASCADE)
-    date = models.DateField()
+    date = models.DateField(auto_now_add=True)
+    reason = models.CharField(max_length=100,blank=True,null=True)
     patient = models.ForeignKey(patient,on_delete=models.CASCADE)
     doctor = models.ForeignKey(doctor, on_delete=models.CASCADE)
     isDischarged = models.BooleanField(default=False)
     def __str__(self):
         return f"{self.hospital.name}-{self.patient.name}-{self.id}"
 class hospitalDocument(models.Model):
+    name = models.CharField(max_length=100,blank=True,null=True)
     added = models.DateTimeField(auto_now_add=True,blank=True,null=True)
     hospitalLedger = models.ForeignKey(hospitalLedger, on_delete=models.CASCADE)
     isPrivate = models.BooleanField(default=True)
     def __str__(self):
         return f"{self.hospitalLedger.hospital.name}-{self.hospitalLedger.patient.name}-{self.id}"
 class patientDocument(models.Model):
+    name = models.CharField(max_length=100, blank=True, null=True)
     patient = models.ForeignKey(patient, on_delete=models.CASCADE)
     isPrivate = models.BooleanField(default=True)
     added = models.DateTimeField(auto_now_add=True,blank=True,null=True)
+    hash = models.CharField(max_length=100,blank=True,null=True)
     def __str__(self):
         return f"{self.patient.name}-{self.id}"
 class documentAcess(models.Model):

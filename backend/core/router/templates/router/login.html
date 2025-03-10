@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Healthcare Login</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f8fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .tab-container {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #7f8c8d;
+            transition: all 0.3s ease;
+        }
+        .tab.active {
+            color: #3498db;
+            border-bottom: 3px solid #3498db;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+        input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        .metamask-field {
+            display: none;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+        #loading {
+            display: none;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Healthcare Portal</h1>
+        <div class="tab-container">
+            <div class="tab active" id="hospital-tab">Hospital</div>
+            <div class="tab" id="doctor-tab">Doctor</div>
+            <div class="tab" id="patient-tab">Patient</div>
+        </div>
+
+        <form id="login-form">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <div class="form-group metamask-field" id="metamask-group">
+                <label for="address">MetaMask Address</label>
+                <div style="display: flex;">
+                    <input type="text" id="address" name="address" placeholder="Your MetaMask address" readonly>
+                    <button type="button" id="connect-metamask" style="width: auto; margin-left: 10px; padding: 12px; font-size: 14px;">Connect</button>
+                </div>
+            </div>
+            <div class="error-message" id="error-message"></div>
+            <button type="submit" id="login-button">Login</button>
+            <div id="loading">
+                <div class="spinner"></div>
+                <p>Logging in...</p>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // DOM elements
+        const hospitalTab = document.getElementById('hospital-tab');
+        const doctorTab = document.getElementById('doctor-tab');
+        const patientTab = document.getElementById('patient-tab');
+        const metamaskGroup = document.getElementById('metamask-group');
+        const connectMetamaskBtn = document.getElementById('connect-metamask');
+        const addressInput = document.getElementById('address');
+        const loginForm = document.getElementById('login-form');
+        const errorMessage = document.getElementById('error-message');
+        const loadingIndicator = document.getElementById('loading');
+        
+        // Current user type
+        let currentUserType = 'hospital';
+        
+        // MetaMask connection functions
+        const connectMetaMask = async () => {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    addressInput.value = accounts[0];
+                    return true;
+                } catch (error) {
+                    console.error('Error connecting to MetaMask:', error);
+                    showError('Failed to connect to MetaMask. Please try again.');
+                    return false;
+                }
+            } else {
+                showError('MetaMask is not installed. Please install it to continue.');
+                return false;
+            }
+        };
+        
+        // API endpoints
+        const API_ENDPOINTS = {
+            hospital: '/hospital-login/',  // Replace with your actual endpoint
+            doctor: '/doctor-login/',      // Replace with your actual endpoint
+            patient: '/patient-login/'     // Replace with your actual endpoint
+        };
+        
+        // Dashboard URLs format
+        const DASHBOARDS = {
+            hospital: 'hospital-dashboard/',  
+            doctor: 'doctor-dashboard/',      
+            patient: 'patient-dashboard/'     
+        };
+        
+        // Tab switching functionality
+        hospitalTab.addEventListener('click', () => {
+            setActiveTab('hospital');
+        });
+        
+        doctorTab.addEventListener('click', () => {
+            setActiveTab('doctor');
+        });
+        
+        patientTab.addEventListener('click', () => {
+            setActiveTab('patient');
+        });
+        
+        // Connect MetaMask button
+        connectMetamaskBtn.addEventListener('click', connectMetaMask);
+        
+        // Form submission
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Show loading indicator
+            loadingIndicator.style.display = 'block';
+            
+            // Hide previous error messages
+            errorMessage.style.display = 'none';
+            
+            // Get form data
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Create request data
+            let requestData = {
+                username: username,
+                password: password
+            };
+            
+            // Add address for hospital and doctor
+            if (currentUserType !== 'patient') {
+                const address = document.getElementById('address').value;
+                if (!address) {
+                    showError('Please connect your MetaMask wallet.');
+                    loadingIndicator.style.display = 'none';
+                    return;
+                }
+                requestData.address = address;
+            }
+            
+            try {
+                // Make API request
+                const response = await fetch(API_ENDPOINTS[currentUserType], {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Store token and ID in cookies
+                    setCookie('authToken', data.token, 7);
+                    
+                    // Store appropriate ID based on user type and prepare redirection ID
+                    let id;
+                    if (currentUserType === 'hospital') {
+                        setCookie('hospId', data.hospId, 7);
+                        id = data.hospId;
+                    } else if (currentUserType === 'doctor') {
+                        setCookie('docId', data.docId, 7);
+                        id = data.docId;
+                    } else {
+                        setCookie('patId', data.patId, 7);
+                        id = data.patId;
+                    }
+                    
+                    // Store user type
+                    setCookie('userType', currentUserType, 7);
+                    
+                    // Redirect to appropriate dashboard with ID
+                    window.location.href ='/route/' + DASHBOARDS[currentUserType] + id;
+                } else {
+                    // Show error message
+                    showError(data.error || 'Login failed. Please check your credentials.');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('An error occurred. Please try again later.');
+            } finally {
+                // Hide loading indicator
+                loadingIndicator.style.display = 'none';
+            }
+        });
+        
+        // Utility functions
+        function setActiveTab(userType) {
+            // Update current user type
+            currentUserType = userType;
+            
+            // Update active tab
+            hospitalTab.classList.remove('active');
+            doctorTab.classList.remove('active');
+            patientTab.classList.remove('active');
+            
+            if (userType === 'hospital') {
+                hospitalTab.classList.add('active');
+                metamaskGroup.style.display = 'block';
+            } else if (userType === 'doctor') {
+                doctorTab.classList.add('active');
+                metamaskGroup.style.display = 'block';
+            } else {
+                patientTab.classList.add('active');
+                metamaskGroup.style.display = 'none';
+            }
+            
+            errorMessage.style.display = 'none';
+        }
+        
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+        
+        function setCookie(name, value, days) {
+            let expires = '';
+            if (days) {
+                const date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = '; expires=' + date.toUTCString();
+            }
+            document.cookie = name + '=' + (value || '') + expires + '; path=/';
+        }
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            setActiveTab('hospital');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload to IPFS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8fff4;
+            text-align: center;
+            padding: 50px;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 128, 0, 0.2);
+            max-width: 400px;
+            margin: auto;
+        }
+        h2 {
+            color: #008000;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #008000;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #008000;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #006400;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Upload Document to IPFS</h2>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="text" id="name" name="name" placeholder="Enter File Name" required>
+            <input type="file" id="file" name="file" required>
+            <button type="submit">Upload</button>
+        </form>
+        <p id="message"></p>
+    </div>
+
+    <script>
+        function getCookie(name) {
+            let cookies = document.cookie.split('; ');
+            for (let cookie of cookies) {
+                let [key, value] = cookie.split('=');
+                if (key === name) return value;
+            }
+            return null;
+        }
+
+        document.getElementById("uploadForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+            let formData = new FormData(this);
+            let token = getCookie("authToken");
+            
+            if (!token) {
+                document.getElementById("message").textContent = "Authentication token not found.";
+                return;
+            }
+            
+            let response = await fetch("http://127.0.0.1:8000/upload/", {
+                method: "POST",
+                headers: { "Authorization": "Token " + token },
+                body: formData
+            });
+            
+            let result = await response.json();
+            document.getElementById("message").textContent = result.message || result.error;
+        });
+    </script>
+</body>
+</html>
