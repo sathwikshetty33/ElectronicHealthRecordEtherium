@@ -25,7 +25,7 @@ checksum_address = Web3.to_checksum_address(address)
 
 print(checksum_address)  
 
-with open(r'/home/sathwik/EHR/backend/core/home/abi.json', "r") as abi_file:
+with open(r'/Volumes/T7/untitled folder 12/ElectronicHealthRecordEtherium/backend/core/home/abi.json', "r") as abi_file:
     contract_abi = json.load(abi_file)
 
 
