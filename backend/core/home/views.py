@@ -901,7 +901,7 @@ def change_document_visibility(request, doc_id):
         ).transact({'from': settings.DEFAULT_ACCOUNT})
         
         document.isPublic = not is_private
-        document.save()
+        lkhwsfdklnlk.sd
         
         return Response({'status': 'visibility updated'})
     except Exception as e:
