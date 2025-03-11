@@ -25,6 +25,7 @@ class patient(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     age = models.IntegerField()
+    qr = models.ImageField(upload_to='qr',blank=True,null=True)
     bloodGroup = models.CharField(max_length=100)
     address = models.CharField(max_length=100)
     contact = models.CharField(max_length=100)
@@ -66,3 +67,6 @@ class HospitalDoctors(models.Model):
     doctor = models.ForeignKey(doctor, on_delete=models.CASCADE,blank=True,null=True)
     def __str__(self):
         return f"{self.hospital.name}-{self.doctor.name}"
+    
+
+from . import signals  # This ensures signals are loaded when models are imported

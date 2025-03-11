@@ -399,6 +399,10 @@ class hospitalDocumetsView(APIView):
             return Response({
                 'detail': 'No documents found'
             }, status=status.HTTP_404_NOT_FOUND)
+        if pat.hospital != user_hospital:
+            return Response({
+                'detail': 'Unauthorized access'
+            }, status=status.HTTP_403_FORBIDDEN)
         serializer = HospitalDocumentSerializer(documents, many=True)
         
         return Response({
@@ -591,12 +595,12 @@ class UploadToIPFSHospital(APIView):
             contract = web3.eth.contract(address=contract_address, abi=contract_abi)
 
             # Verify hospital address is valid
-            try:
-                sender_address = Web3.to_checksum_address(hospital_address)
-                if web3.eth.get_balance(sender_address) == 0:
-                    return Response({"error": "Hospital account has no balance for transaction"}, status=400)
-            except ValueError:
-                return Response({"error": f"Invalid hospital address format: {hospital_address}"}, status=400)
+            # try:
+            #     sender_address = Web3.to_checksum_address(hospital_address)
+            #     if web3.eth.get_balance(sender_address) == 0:
+            #         return Response({"error": "Hospital account has no balance for transaction"}, status=400)
+            # except ValueError:
+            #     return Response({"error": f"Invalid hospital address format: {hospital_address}"}, status=400)
 
             # Get the latest block timestamp
             current_timestamp = int(web3.eth.get_block('latest')['timestamp'])
@@ -604,7 +608,7 @@ class UploadToIPFSHospital(APIView):
             # Call the addHospitalDocument function
             tx_hash = contract.functions.addHospitalDocument(
                 ledger.patient.id, cid, document_id, current_timestamp, False
-            ).transact({'from': sender_address})
+            ).transact({'from': checksum_address})
 
             # Wait for the transaction receipt
             receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
@@ -621,7 +625,19 @@ class UploadToIPFSHospital(APIView):
                 status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": f"Blockchain error: {str(e)}"}, status=500)
-
+class PatientDocumentVisibiltyStatus(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
+    def get(self,request,id):
+        try:
+            pat = patientDocument.objects.get(id=id)
+        except patientDocument.DoesNotExist:
+            return Response(status=404)
+        if request.user == pat.patient.user:
+            return Response({
+                'visible': True
+            }, status=200)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
 class PatientDocumentView(APIView):
     """
     API view to get patient document from blockchain and redirect to IPFS
