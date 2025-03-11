@@ -33,7 +33,7 @@ contract HealthRecordSystem {
     event AddedHospital(uint indexed hospitalId, address indexed hospitalAddress);
     constructor() {
         defaultAddress = msg.sender;
-
+        hahahaha
     }
 
     modifier onlyOwner() {
@@ -45,7 +45,7 @@ contract HealthRecordSystem {
     function own() public view returns (address) {
         return defaultAddress;
     }
-    function giveHospitalDocumentAccess(uint _id, address _user) public {
+    function giveHospitalDocumentAccess(uint _id, address _user) public view pure{
         hospitalDocumentAuthorizations[_id][_user] = true;
         emit AccessGranted(_id, _user);
     }
