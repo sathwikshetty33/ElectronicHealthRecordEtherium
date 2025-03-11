@@ -17,3 +17,5 @@ def hospitalDocumetsView(request, id):
     return render(request, 'router/hospitalDocuments.html',{'id' : id})
 def patientUpload(request):
     return render(request, 'router/patientUpload.html')
+def chat_page(request):
+    return render(request, 'router/bot.html')

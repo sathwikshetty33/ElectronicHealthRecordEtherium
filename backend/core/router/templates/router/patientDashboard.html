@@ -1,3 +1,7 @@
+Patient Dashboard with Document Visibility Management
+Preview
+Code
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,6 +14,7 @@
             margin: 0;
             padding: 0;
             background-color: #f4f4f4;
+            line-height: 1.6; /* Improved readability */
         }
         .container {
             width: 80%;
@@ -22,56 +27,94 @@
         h2 {
             text-align: center;
             color: #333;
+            margin-bottom: 30px; /* Added spacing for better hierarchy */
+            font-size: 28px; /* Slightly larger for emphasis */
         }
         .info {
-            padding: 10px;
+            padding: 15px; /* Slightly more padding for breathing room */
             border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: flex-start;
+            background-color: #fafafa; /* Subtle background for distinction */
+            border-radius: 4px; /* Softer edges */
+        }
+        .patient-details {
+            flex-grow: 1;
+            font-size: 16px; /* Slightly larger text for readability */
+        }
+        .qr-code-section {
+            margin-left: 20px;
+            text-align: center; /* Centered QR code section */
+        }
+        .qr-code {
+            max-width: 150px;
+            max-height: 150px;
+            border: 1px solid #ddd; /* Subtle border for definition */
+            padding: 5px; /* Padding around QR code */
+            background: white; /* Clean background */
         }
         .slider-container {
             position: relative;
             width: 100%;
             overflow: hidden;
-            margin: 20px 0;
+            margin: 30px 0; /* More vertical spacing */
         }
         .slider {
             display: flex;
             gap: 15px;
             overflow-x: auto;
             scroll-behavior: smooth;
-            padding: 10px;
+            padding: 15px; /* Slightly more padding */
             background: #e8e8e8;
             border-radius: 5px;
             white-space: nowrap;
+            scrollbar-width: thin; /* Better scrollbar styling */
+            scrollbar-color: #888 #e8e8e8; /* Custom scrollbar colors */
         }
         .document {
             background: white;
-            padding: 10px;
+            padding: 15px; /* More padding for comfort */
             border-radius: 5px;
             min-width: 150px;
             text-align: center;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            position: relative;
+            transition: transform 0.2s; /* Smooth hover effect */
+        }
+        .document:hover {
+            transform: translateY(-5px); /* Lift effect on hover */
         }
         .nav-btn {
             cursor: pointer;
-            padding: 10px;
+            padding: 12px; /* Slightly larger for better clickability */
             background: #333;
             color: white;
             border: none;
             border-radius: 5px;
             margin: 5px;
+            font-size: 16px; /* Larger text */
+            transition: background-color 0.3s; /* Smooth transition */
+        }
+        .nav-btn:hover {
+            background: #555; /* Hover feedback */
         }
         .empty-message {
             text-align: center;
             color: gray;
             font-style: italic;
+            padding: 20px; /* More padding for visibility */
         }
         .doc-btn {
             margin-top: 8px;
-            padding: 5px 10px;
+            padding: 6px 12px; /* Slightly larger buttons */
             border: none;
             border-radius: 3px;
             cursor: pointer;
             font-size: 12px;
+            transition: opacity 0.2s; /* Smooth hover effect */
+        }
+        .doc-btn:hover {
+            opacity: 0.9; /* Subtle hover feedback */
         }
         .view-btn {
             background-color: #4CAF50;
@@ -85,46 +128,91 @@
             font-size: 12px;
             color: #666;
             margin-top: 8px;
+            font-style: italic; /* Better visual cue */
         }
         .error {
             font-size: 12px;
             color: #f44336;
             margin-top: 8px;
+            font-weight: bold; /* More emphasis on errors */
         }
         .auth-section {
             margin-top: 20px;
             text-align: center;
+            padding: 15px; /* Added padding */
+            background: #f9f9f9; /* Subtle background */
+            border-radius: 4px; /* Rounded edges */
         }
         .login-btn, .add-doc-btn {
-            padding: 10px 15px;
+            padding: 10px 20px; /* Larger buttons for better UX */
             font-size: 14px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             margin: 10px;
+            transition: background-color 0.3s; /* Smooth hover effect */
         }
         .login-btn {
             background-color: #2196F3;
             color: white;
         }
+        .login-btn:hover {
+            background-color: #1976D2; /* Darker shade on hover */
+        }
         .add-doc-btn {
             background-color: #4CAF50;
             color: white;
         }
-    </style>
-</head>
+        .add-doc-btn:hover {
+            background-color: #388E3C; /* Darker shade on hover */
+        }
+        .more-options {
+            cursor: pointer;
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            padding: 5px; /* Clickable area */
+            font-size: 16px; /* Larger for visibility */
+        }
+        .context-menu {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 10;
+            right: 0;
+            top: 100%;
+            min-width: 150px;
+            border-radius: 4px;
+            padding: 5px 0;
+        }
+        .context-menu-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .context-menu-item:hover {
+            background-color: #f0f0f0;
+        }
+    </style></head>
 <body>
 
 <div class="container">
     <h2>Patient Dashboard</h2>
     
     <div class="info">
-        <strong>Name:</strong> <span id="patient-name"></span><br>
-        <strong>Age:</strong> <span id="patient-age"></span><br>
-        <strong>Blood Group:</strong> <span id="patient-blood-group"></span><br>
-        <strong>Address:</strong> <span id="patient-address"></span><br>
-        <strong>Contact:</strong> <span id="patient-contact"></span><br>
-        <strong>Emergency Contact:</strong> <span id="patient-emergency"></span>
+        <div class="patient-details">
+            <strong>Name:</strong> <span id="patient-name"></span><br>
+            <strong>Age:</strong> <span id="patient-age"></span><br>
+            <strong>Blood Group:</strong> <span id="patient-blood-group"></span><br>
+            <strong>Address:</strong> <span id="patient-address"></span><br>
+            <strong>Contact:</strong> <span id="patient-contact"></span><br>
+            <strong>Emergency Contact:</strong> <span id="patient-emergency"></span>
+        </div>
+        <div class="qr-code-section">
+            <strong>Patient QR Code</strong><br>
+            <img id="patient-qr-code" class="qr-code" alt="Patient QR Code" src="">
+        </div>
     </div>
 
     <div id="auth-section" class="auth-section">
@@ -149,7 +237,19 @@
 <script>
     const patientId = {{id}}; // Change this dynamically as needed
 
-    // Check patient authorization
+    // Utility Functions
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return '';
+    }
+
+    function closeAllContextMenus() {
+        document.querySelectorAll('.context-menu').forEach(menu => menu.remove());
+    }
+
+    // Authorization and Dashboard Initialization
     function checkPatientAuth() {
         const authSection = document.getElementById("auth-section");
         authSection.innerHTML = '<div class="loading">Checking authorization...</div>';
@@ -157,25 +257,19 @@
         fetch(`/check-patient/${patientId}`)
             .then(response => {
                 if (response.status === 200) {
-                    // Authorized - show add document button
                     authSection.innerHTML = `
                         <button class="add-doc-btn" onclick="addDocument()">
                             Add Document
                         </button>
                     `;
                 } else if (response.status === 403) {
-                    // Not logged in - show login button
                     authSection.innerHTML = `
                         <div class="error">You need to log in to access this patient's dashboard</div>
                         <button class="login-btn" onclick="redirectToLogin()">
                             Login
                         </button>
                     `;
-                } else if (response.status === 401) {
-                    // Unauthorized - don't show anything
-                    authSection.innerHTML = '';
                 } else {
-                    // Other error
                     authSection.innerHTML = '<div class="error">Error checking authorization</div>';
                 }
             })
@@ -190,138 +284,184 @@
     }
 
     function addDocument() {
-        console.log("Adding new document");
-        // Implement document adding functionality
         window.location.href = `/route/patient-upload/`;
     }
 
-    // Fetch patient details
-    fetch(`/patient-dashboard/${patientId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.patient) {
-                document.getElementById("patient-name").innerText = data.patient?.name || '';
-                document.getElementById("patient-age").innerText = data.patient?.age || '';
-                document.getElementById("patient-blood-group").innerText = data.patient?.bloodGroup || '';
-                document.getElementById("patient-address").innerText = data.patient?.address || '';
-                document.getElementById("patient-contact").innerText = data.patient?.contact || '';
-                document.getElementById("patient-emergency").innerText = data.patient?.emergencyContact || '';
-            }
-        })
-        .catch(error => console.error("Error fetching patient details:", error));
-
-    // Fetch patient documents
-    fetch(`/patient-documents/${patientId}`)
-        .then(response => response.json())
-        .then(data => {
-            const personalSlider = document.getElementById("personal-slider");
-            const hospitalSlider = document.getElementById("hospital-slider");
-
-            if (data.patient && data.patient.length > 0) {
-                data.patient.forEach(doc => {
-                    // Ensure the document has an id property
-                    const docId = doc.id;
-                    if (!docId) {
-                        console.error("Document missing ID:", doc);
-                    }
-                    
-                    const div = document.createElement("div");
-                    div.classList.add("document");
-                    div.innerHTML = `
-                        <strong>${doc.name}</strong><br>
-                        ${new Date(doc.added).toLocaleDateString()}<br>
-                        <div id="patient-access-control-${docId}" class="access-control">
-                            <div class="loading">Checking access...</div>
-                        </div>
-                    `;
-                    personalSlider.appendChild(div);
-                    
-                    // Check document access permission if we have an ID
-                    if (docId) {
-                        checkPatientDocumentAccess(docId);
-                    } else {
-                        // Update access control div if no ID
-                        document.getElementById(`patient-access-control-${docId}`).innerHTML = 
-                            '<div class="error">Invalid document ID</div>';
-                    }
-                });
-            } else {
-                personalSlider.innerHTML = "<p class='empty-message'>No personal documents found.</p>";
-            }
-
-            if (data.hospital && data.hospital.length > 0) {
-                data.hospital.forEach(doc => {
-                    const docId = doc.id;
-                    if (!docId) {
-                        console.error("Hospital document missing ID:", doc);
-                    }
-                    
-                    const div = document.createElement("div");
-                    div.classList.add("document");
-                    div.innerHTML = `
-                        <strong>${doc.name}</strong><br>
-                        ${new Date(doc.added).toLocaleDateString()}<br>
-                        <div id="hospital-access-control-${docId}" class="access-control">
-                            <div class="loading">Checking access...</div>
-                        </div>
-                    `;
-                    hospitalSlider.appendChild(div);
-                    
-                    // Check hospital document access permission if we have an ID
-                    if (docId) {
-                        checkHospitalDocumentAccess(docId);
-                    } else {
-                        // Update access control div if no ID
-                        document.getElementById(`hospital-access-control-${docId}`).innerHTML = 
-                            '<div class="error">Invalid document ID</div>';
-                    }
-                });
-            } else {
-                hospitalSlider.innerHTML = "<p class='empty-message'>No hospital documents found.</p>";
-            }
-            
-            // Log the actual data structure received for debugging
-            console.log("Document data received:", data);
-        })
-        .catch(error => console.error("Error fetching documents:", error));
-
-    // Check patient document access permissions
-    function checkPatientDocumentAccess(docId) {
-        console.log(`Checking access for patient document ID: ${docId}`);
+    // Document Management Functions
+    function checkPatientDocStatus(docId, docElement) {
+        const authToken = getCookie('authToken');
         
-        fetch(`/patient-document-access/${docId}`)
-            .then(response => {
-                const accessControlDiv = document.getElementById(`patient-access-control-${docId}`);
-                
-                if (response.status === 200) {
-                    // Access granted - show view button
-                    accessControlDiv.innerHTML = `
-                        <button class="doc-btn view-btn" onclick="viewPatientDocument('${docId}')">
-                            View Document
-                        </button>
-                    `;
-                } else if (response.status === 401) {
-                    // Not authorized but can request - show request button
-                    accessControlDiv.innerHTML = `
-                        <button class="doc-btn request-btn" onclick="requestPatientAccess('${docId}')">
-                            Request Access
-                        </button>
-                    `;
-                } else if (response.status === 403) {
-                    // Forbidden - show nothing
-                    accessControlDiv.innerHTML = '';
-                } else {
-                    // Other error
-                    accessControlDiv.innerHTML = '<div class="error">Unable to check access</div>';
-                }
-            })
-            .catch(error => {
-                console.error(`Error checking patient document access for ID ${docId}:`, error);
-                const accessControlDiv = document.getElementById(`patient-access-control-${docId}`);
-                accessControlDiv.innerHTML = '<div class="error">Error checking access</div>';
-            });
+        fetch(`/check-patient-doc-status/${docId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Token ${authToken}`
+            }
+        })
+        .then(response => {
+            if (response.status === 200) {
+                const moreOptionsSpan = document.createElement('span');
+                moreOptionsSpan.innerHTML = '&#8942;'; 
+                moreOptionsSpan.classList.add('more-options');
+                moreOptionsSpan.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    closeAllContextMenus();
+                    showContextMenu(docId, moreOptionsSpan, true);
+                });
+                docElement.appendChild(moreOptionsSpan);
+            }
+        })
+        .catch(error => {
+            console.error(`Error checking document status for ${docId}:`, error);
+        });
     }
 
+    function showContextMenu(docId, anchorElement, isPatientDoc) {
+        event.stopPropagation();
+        closeAllContextMenus();
+        
+        const contextMenu = document.createElement('div');
+        contextMenu.classList.add('context-menu');
+        
+        const authToken = getCookie('authToken');
+        
+        if (isPatientDoc) {
+            fetch(`/patient-documents/${docId}/status`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Token ${authToken}`
+                }
+            })
+            .then(response => response.json())
+            .then(docData => {
+                const visibilityItem = document.createElement('div');
+                visibilityItem.classList.add('context-menu-item');
+                visibilityItem.textContent = docData.isPrivate ? 'Change to Public' : 'Change to Private';
+                visibilityItem.addEventListener('click', () => {
+                    changeDocumentVisibility(docId, !docData.isPrivate, isPatientDoc);
+                });
+                contextMenu.appendChild(visibilityItem);
+                
+                const deleteItem = document.createElement('div');
+                deleteItem.classList.add('context-menu-item');
+                deleteItem.textContent = 'Delete Document';
+                deleteItem.style.color = 'red';
+                deleteItem.addEventListener('click', () => {
+                    deleteDocument(docId, isPatientDoc);
+                });
+                contextMenu.appendChild(deleteItem);
+                
+                anchorElement.appendChild(contextMenu);
+                document.addEventListener('click', closeAllContextMenus, { once: true });
+            })
+            .catch(error => {
+                console.error('Error fetching document status:', error);
+            });
+        } else {
+            const requestAccessItem = document.createElement('div');
+            requestAccessItem.classList.add('context-menu-item');
+            requestAccessItem.textContent = 'Request Access';
+            requestAccessItem.addEventListener('click', () => {
+                requestHospitalAccess(docId);
+            });
+            contextMenu.appendChild(requestAccessItem);
+            
+            anchorElement.appendChild(contextMenu);
+            document.addEventListener('click', closeAllContextMenus, { once: true });
+        }
+    }
+
+    function changeDocumentVisibility(docId, isPrivate, isPatientDoc) {
+        const authToken = getCookie('authToken');
+        
+        fetch(`/change-document-visibility/${docId}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Token ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                isPrivate: isPrivate,
+                isPatientDoc: isPatientDoc 
+            })
+        })
+        .then(response => {
+            if (response.ok) {
+                alert(`Document visibility changed to ${isPrivate ? 'Private' : 'Public'}`);
+                location.reload();
+            } else {
+                alert('Failed to change document visibility');
+            }
+        })
+        .catch(error => {
+            console.error('Error changing document visibility:', error);
+            alert('Error changing document visibility');
+        });
+    }
+
+    function deleteDocument(docId, isPatientDoc) {
+        const authToken = getCookie('authToken');
+        
+        if (!confirm('Are you sure you want to delete this document?')) return;
+        
+        fetch(`/delete-document/${docId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Token ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                isPatientDoc: isPatientDoc 
+            })
+        })
+        .then(response => {
+            if (response.ok) {
+                alert('Document deleted successfully');
+                location.reload();
+            } else {
+                alert('Failed to delete document');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting document:', error);
+            alert('Error deleting document');
+        });
+    }
+
+    // Document Access and Viewing
+    function checkPatientDocumentAccess(docId) {
+        const authToken = getCookie('authToken');
+        
+        fetch(`/patient-document-access/${docId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Token ${authToken}`
+            }
+        })
+        .then(response => {
+            const accessControlDiv = document.getElementById(`patient-access-control-${docId}`);
+            
+            if (response.status === 200) {
+                accessControlDiv.innerHTML = `
+                    <button class="doc-btn view-btn" onclick="viewPatientDocument('${docId}')">
+                        View Document
+                    </button>
+                `;
+            } else if (response.status === 401) {
+                accessControlDiv.innerHTML = `
+                    <button class="doc-btn request-btn" onclick="requestPatientAccess('${docId}')">
+                        Request Access
+                    </button>
+                `;
+            } else {
+                accessControlDiv.innerHTML = '';
+            }
+        })
+        .catch(error => {
+            console.error(`Error checking patient document access for ID ${docId}:`, error);
+            const accessControlDiv = document.getElementById(`patient-access-control-${docId}`);
+            accessControlDiv.innerHTML = '<div class="error">Error checking access</div>';
+        });
+    }
     // Check hospital document access permissions
     function checkHospitalDocumentAccess(docId) {
         console.log(`Checking access for hospital document ID: ${docId}`);
@@ -510,6 +650,1010 @@
         checkPatientAuth();
     };
 </script>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4CAF50;
+            --info: #2196F3;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0;
+        }
+        
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            transition: var(--transition);
+        }
+        
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            background: white;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-title {
+            margin: 0;
+            color: var(--dark);
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        .card-subtitle {
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .patient-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            align-items: flex-start;
+        }
+        
+        .patient-details {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .info-row {
+            display: flex;
+            margin-bottom: 0.75rem;
+            align-items: baseline;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            width: 140px;
+            color: var(--gray);
+        }
+        
+        .info-value {
+            flex: 1;
+        }
+        
+        .qr-code-section {
+            text-align: center;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .qr-code-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--gray);
+        }
+        
+        .qr-code {
+            max-width: 150px;
+            max-height: 150px;
+            border: 5px solid white;
+            border-radius: 8px;
+        }
+        
+        .documents-section {
+            margin-top: 1.5rem;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .section-title i {
+            color: var(--primary);
+        }
+        
+        .slider-container {
+            position: relative;
+            width: 100%;
+            margin: 1rem 0;
+        }
+        
+        .slider-controls {
+            display: flex;
+            justify-content: space-between;
+            position: absolute;
+            width: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+            pointer-events: none;
+        }
+        
+        .nav-btn {
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.9);
+            color: var(--primary);
+            border: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            pointer-events: auto;
+        }
+        
+        .nav-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .nav-btn i {
+            font-size: 1rem;
+        }
+        
+        .slider {
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            padding: 1rem 0.5rem;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0,0,0,0.2) transparent;
+        }
+        
+        .slider::-webkit-scrollbar {
+            height: 6px;
+        }
+        
+        .slider::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .slider::-webkit-scrollbar-thumb {
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 20px;
+        }
+        
+        .document {
+            flex: 0 0 auto;
+            width: 180px;
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: relative;
+            transition: var(--transition);
+            border: 1px solid rgba(0,0,0,0.08);
+        }
+        
+        .document:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .document-icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+            color: var(--primary);
+            text-align: center;
+        }
+        
+        .document-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            word-break: break-word;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            height: 3rem;
+        }
+        
+        .document-date {
+            font-size: 0.8rem;
+            color: var(--gray);
+            margin-bottom: 0.75rem;
+        }
+        
+        .document-visibility {
+            font-size: 0.8rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .document-visibility.private {
+            color: var(--warning);
+        }
+        
+        .document-visibility.public {
+            color: var(--success);
+        }
+        
+        .doc-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .doc-btn {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+        }
+        
+        .view-btn {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .view-btn:hover {
+            background-color: var(--secondary);
+        }
+        
+        .request-btn {
+            background-color: var(--light);
+            color: var(--dark);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .request-btn:hover {
+            background-color: #e9ecef;
+        }
+        
+        .empty-message {
+            text-align: center;
+            color: var(--gray);
+            font-style: italic;
+            padding: 2rem;
+            background: #f8f9fa;
+            border-radius: var(--border-radius);
+        }
+        
+        .more-options {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            cursor: pointer;
+            color: var(--gray);
+            transition: var(--transition);
+            z-index: 3;
+        }
+        
+        .more-options:hover {
+            background-color: rgba(0,0,0,0.05);
+            color: var(--dark);
+        }
+        
+        .context-menu {
+            position: absolute;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 3px 12px rgba(0,0,0,0.15);
+            z-index: 10;
+            right: 0;
+            top: 100%;
+            min-width: 180px;
+            transform-origin: top right;
+            animation: scaleIn 0.15s ease-out forwards;
+            overflow: hidden;
+        }
+        
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        .context-menu-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .context-menu-item:hover {
+            background-color: rgba(0,0,0,0.03);
+        }
+        
+        .context-menu-item.danger {
+            color: var(--danger);
+        }
+        
+        .context-menu-item.danger:hover {
+            background-color: rgba(244,67,54,0.08);
+        }
+        
+        .auth-section {
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary);
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #3d8b40;
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            color: var(--gray);
+            padding: 0.75rem;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid rgba(0,0,0,0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .error {
+            color: var(--danger);
+            background-color: rgba(244,67,54,0.08);
+            padding: 0.75rem;
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 999px;
+        }
+        
+        .badge-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .badge-success {
+            background-color: #e6f4ea;
+            color: #137333;
+        }
+        
+        .badge-warning {
+            background-color: #fef0db;
+            color: #b06000;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                width: 95%;
+                margin: 1rem auto;
+            }
+            
+            .card-header, .card-body {
+                padding: 1rem;
+            }
+            
+            .patient-info {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+            
+            .patient-details {
+                min-width: 100%;
+            }
+            
+            .qr-code-section {
+                width: 100%;
+            }
+            
+            .document {
+                width: 160px;
+            }
+            
+            .section-title {
+                font-size: 1rem;
+            }
+        }
+        
+        /* Toast notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            z-index: 9999;
+        }
+        
+        .toast {
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            min-width: 300px;
+            max-width: 450px;
+            transform: translateX(120%);
+            animation: slideIn 0.3s forwards, fadeOut 0.3s 5s forwards;
+        }
+        
+        @keyframes slideIn {
+            to { transform: translateX(0); }
+        }
+        
+        @keyframes fadeOut {
+            to { opacity: 0; visibility: hidden; }
+        }
+        
+        .toast-icon {
+            font-size: 1.25rem;
+        }
+        
+        .toast-success .toast-icon {
+            color: var(--success);
+        }
+        
+        .toast-error .toast-icon {
+            color: var(--danger);
+        }
+        
+        .toast-warning .toast-icon {
+            color: var(--warning);
+        }
+        
+        .toast-info .toast-icon {
+            color: var(--info);
+        }
+        
+        .toast-content {
+            flex: 1;
+        }
+        
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .toast-message {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+        
+        .toast-close {
+            color: var(--gray);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal {
+            background: white;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalIn 0.3s;
+        }
+        
+        @keyframes modalIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            cursor: pointer;
+            color: var(--gray);
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Patient Dashboard</h2>
+            <div id="auth-section">
+                <div class="loading">
+                    <span class="loading-spinner"></span>
+                    Checking authorization...
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <div class="patient-info">
+                <div class="patient-details">
+                    <div class="info-row">
+                        <div class="info-label">Name:</div>
+                        <div class="info-value" id="patient-name">Loading...</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Age:</div>
+                        <div class="info-value" id="patient-age">Loading...</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Blood Group:</div>
+                        <div class="info-value" id="patient-blood-group">Loading...</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Address:</div>
+                        <div class="info-value" id="patient-address">Loading...</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Contact:</div>
+                        <div class="info-value" id="patient-contact">Loading...</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Emergency Contact:</div>
+                        <div class="info-value" id="patient-emergency">Loading...</div>
+                    </div>
+                </div>
+                
+                <div class="qr-code-section">
+                    <div class="qr-code-title">PATIENT QR CODE</div>
+                    <img id="patient-qr-code" class="qr-code" alt="Patient QR Code" src="">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="documents-section">
+        <div class="card">
+            <div class="card-header">
+                <div class="section-title">
+                    <i class="fas fa-file-medical"></i> Personal Documents
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="slider-container">
+                    <div class="slider-controls">
+                        <button class="nav-btn" onclick="scrollLeft('personal-slider')">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="nav-btn" onclick="scrollRight('personal-slider')">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="slider" id="personal-slider">
+                        <!-- Documents will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="documents-section">
+        <div class="card">
+            <div class="card-header">
+                <div class="section-title">
+                    <i class="fas fa-hospital"></i> Hospital Documents
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="slider-container">
+                    <div class="slider-controls">
+                        <button class="nav-btn" onclick="scrollLeft('hospital-slider')">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="nav-btn" onclick="scrollRight('hospital-slider')">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="slider" id="hospital-slider">
+                        <!-- Documents will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast container for notifications -->
+<div class="toast-container" id="toast-container"></div>
+<script>
+    // Global variables
+const patientId = {{id}}; // This will be dynamically replaced
+let toastTimeout;
+
+// Utility Functions
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return '';
+}
+
+// Toast notification system
+function showToast(type, title, message, duration = 5000) {
+    const toastContainer = document.getElementById('toast-container');
+    
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    // Set icon based on type
+    let icon = 'info-circle';
+    if (type === 'success') icon = 'check-circle';
+    if (type === 'error') icon = 'exclamation-circle';
+    if (type === 'warning') icon = 'exclamation-triangle';
+    
+    toast.innerHTML = `
+        <div class="toast-icon">
+            <i class="fas fa-${icon}"></i>
+        </div>
+        <div class="toast-content">
+            <div class="toast-title">${title}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    // Add to container
+    toastContainer.appendChild(toast);
+    
+    // Remove after duration
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, duration);
+}
+
+// Modal system
+function showModal(title, content, actions) {
+    // Remove any existing modal
+    const existingModal = document.querySelector('.modal-overlay');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Create modal overlay
+    const modalOverlay = document.createElement('div');
+    modalOverlay.className = 'modal-overlay';
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    
+    // Create modal header
+    const modalHeader = document.createElement('div');
+    modalHeader.className = 'modal-header';
+    modalHeader.innerHTML = `
+        <h3 class="modal-title">${title}</h3>
+        <button class="modal-close" onclick="closeModal()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    // Create modal body
+    const modalBody = document.createElement('div');
+    modalBody.className = 'modal-body';
+    modalBody.innerHTML = content;
+    
+    // Create modal footer with actions
+    const modalFooter = document.createElement('div');
+    modalFooter.className = 'modal-footer';
+    
+    actions.forEach(action => {
+        const button = document.createElement('button');
+        button.className = `btn ${action.class || 'btn-primary'}`;
+        button.textContent = action.text;
+        button.onclick = action.handler;
+        modalFooter.appendChild(button);
+    });
+    
+    // Assemble modal
+    modal.appendChild(modalHeader);
+    modal.appendChild(modalBody);
+    modal.appendChild(modalFooter);
+    modalOverlay.appendChild(modal);
+    
+    // Add modal to body
+    document.body.appendChild(modalOverlay);
+    
+    // Close when clicking outside
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+            closeModal();
+        }
+    });
+}
+
+function closeModal() {
+    const modalOverlay = document.querySelector('.modal-overlay');
+    if (modalOverlay) {
+        modalOverlay.remove();
+    }
+}
+
+// Close all context menus when clicking elsewhere
+document.addEventListener('click', (e) => {
+    const contextMenu = document.querySelector('.context-menu');
+    const clickedMoreOptions = e.target.closest('.more-options');
+    
+    if (contextMenu && !clickedMoreOptions) {
+        contextMenu.remove();
+    }
+});
+
+// Authorization and Dashboard Initialization
+function loadPatientDashboard() {
+    // Load patient information
+    loadPatientInfo();
+    
+    // Check authorization status
+    checkPatientAuth();
+    
+    // Load document sections
+    loadPersonalDocuments();
+    loadHospitalDocuments();
+}
+
+function loadPatientInfo() {
+    const authToken = getCookie('authToken');
+    
+    fetch(`/patient/${patientId}/info`, {
+        method: 'GET',
+        headers: {
+            'Authorization': authToken ? `Token ${authToken}` : ''
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to load patient information');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Update patient info fields
+        document.getElementById('patient-name').textContent = data.name || 'N/A';
+        document.getElementById('patient-age').textContent = data.age || 'N/A';
+        document.getElementById('patient-blood-group').textContent = data.bloodGroup || 'N/A';
+        document.getElementById('patient-address').textContent = data.address || 'N/A';
+        document.getElementById('patient-contact').textContent = data.contact || 'N/A';
+        document.getElementById('patient-emergency').textContent = data.emergencyContact || 'N/A';
+        
+        // Update QR code
+        if (data.qrCodeUrl) {
+            document.getElementById('patient-qr-code').src = data.qrCodeUrl;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading patient info:', error);
+        showToast('error', 'Error', 'Failed to load patient information');
+    });
+}
+
+function checkPatientAuth() {
+    const authSection = document.getElementById("auth-section");
+    authSection.innerHTML = `
+        <div class="loading">
+            <span class="loading-spinner"></span>
+            Checking authorization...
+        </div>
+    `;
+    
+    fetch(`/check-patient/${patientId}`)
+        .then(response => {
+            if (response.status === 200) {
+                // Authorized
+                authSection.innerHTML = `
+                    <button class="btn btn-success" onclick="addDocument()">
+                        <i class="fas fa-plus"></i> Add Document
+                    </button>
+                `;
+            } else if (response.status === 403) {
+                // Not authorized
+                authSection.innerHTML = `
+                    <div class="error">
+                        <i class="fas fa-lock"></i>
+                        You need to log in to access this patient's dashboard
+                    </div>
+                    <button class="btn btn-primary" onclick="redirectToLogin()">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                `;
+            } else {
+                // Error
+                authSection.innerHTML = `
+                    <div class="error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Error checking authorization
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error("Error checking patient authorization:", error);
+            authSection.innerHTML = `
+                <div class="error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Error checking authorization
+                </div>
+            `;
+        });
+}
+
+function redirectToLogin() {
+    window.location.href = "/route/";
+}
+
+function addDocument() {
+    window.location.href = `/route/patient-upload/`;
+}
+
+// Document Loading and Management
+function loadPersonalDocuments() {
+    const slider = document.getElementById('personal-slider');
+    slider.innerHTML = `
+        <div class="loading">
+            <span class="loading-spinner"></span>
+    </script>
 
 </body>
 </html>

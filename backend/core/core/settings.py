@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'router',
     'rest_framework',
     'rest_framework.authtoken',
+    'bot',
 ]
 
 MIDDLEWARE = [
@@ -145,3 +146,8 @@ load_dotenv()
 
 PINATA_API_KEY = os.getenv("PINATA_API_KEY")
 PINATA_SECRET_KEY = os.getenv("PINATA_SECRET_KEY")
+
+import os
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
