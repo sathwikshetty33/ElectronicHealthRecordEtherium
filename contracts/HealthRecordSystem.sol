@@ -61,7 +61,7 @@ contract HealthRecordSystem {
         hospitalDocumentAuthorizations[_id][_user] = false;
         emit AccessRevoked(_id, _user);
     }
-    function addHospitalDocument(uint _patid,string  memory _hash,uint256 _documentId,uint256 _timestamp,bool vis) external {
+    function nt _patid,string  memory _hash,uint256 _documentId,uint256 _timestamp,bool vis) external {
         hospitalDocuments[_documentId] = HospitalDocument(_hash,msg.sender,_documentId,_patid,_timestamp,vis);
         emit DocumentAdded(_documentId, _hash, true);
     }
