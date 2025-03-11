@@ -154,5 +154,3 @@ class ChatMessageView(APIView):
         except Exception as e:
             return f"I apologize, but I'm unable to respond at the moment. Please try again later."
 
-def chat_page(request):
-    return render(request, 'bot/bot.html')
